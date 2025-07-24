@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme CSS Variables */
+:root {
+  /* Light theme colors */
+  --color-bg-primary: 249 250 251; /* gray-50 */
+  --color-bg-secondary: 255 255 255; /* white */
+  --color-bg-tertiary: 243 244 246; /* gray-100 */
+  --color-bg-accent: 239 246 255; /* blue-50 */
+  
+  --color-text-primary: 17 24 39; /* gray-900 */
+  --color-text-secondary: 75 85 99; /* gray-600 */
+  --color-text-tertiary: 156 163 175; /* gray-400 */
+  --color-text-inverse: 255 255 255; /* white */
+  
+  --color-border-primary: 229 231 235; /* gray-200 */
+  --color-border-secondary: 209 213 219; /* gray-300 */
+  --color-border-accent: 147 197 253; /* blue-300 */
+  
+  --color-accent-primary: 59 130 246; /* blue-500 */
+  --color-accent-secondary: 37 99 235; /* blue-600 */
+  --color-accent-hover: 29 78 216; /* blue-700 */
+  
+  --color-success: 34 197 94; /* green-500 */
+  --color-warning: 245 158 11; /* amber-500 */
+  --color-error: 239 68 68; /* red-500 */
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Dark theme colors */
+.dark {
+  --color-bg-primary: 17 24 39; /* gray-900 */
+  --color-bg-secondary: 31 41 55; /* gray-800 */
+  --color-bg-tertiary: 55 65 81; /* gray-700 */
+  --color-bg-accent: 30 58 138; /* blue-900 */
+  
+  --color-text-primary: 243 244 246; /* gray-100 */
+  --color-text-secondary: 209 213 219; /* gray-300 */
+  --color-text-tertiary: 156 163 175; /* gray-400 */
+  --color-text-inverse: 17 24 39; /* gray-900 */
+  
+  --color-border-primary: 75 85 99; /* gray-600 */
+  --color-border-secondary: 107 114 128; /* gray-500 */
+  --color-border-accent: 59 130 246; /* blue-500 */
+  
+  --color-accent-primary: 96 165 250; /* blue-400 */
+  --color-accent-secondary: 59 130 246; /* blue-500 */
+  --color-accent-hover: 37 99 235; /* blue-600 */
+  
+  --color-success: 74 222 128; /* green-400 */
+  --color-warning: 251 191 36; /* amber-400 */
+  --color-error: 248 113 113; /* red-400 */
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Custom utility classes using CSS variables */
+@layer utilities {
+  .bg-theme-primary {
+    background-color: rgb(var(--color-bg-primary));
+  }
+  
+  .bg-theme-secondary {
+    background-color: rgb(var(--color-bg-secondary));
+  }
+  
+  .bg-theme-tertiary {
+    background-color: rgb(var(--color-bg-tertiary));
+  }
+  
+  .text-theme-primary {
+    color: rgb(var(--color-text-primary));
+  }
+  
+  .text-theme-secondary {
+    color: rgb(var(--color-text-secondary));
+  }
+  
+  .text-theme-tertiary {
+    color: rgb(var(--color-text-tertiary));
+  }
+  
+  .border-theme-primary {
+    border-color: rgb(var(--color-border-primary));
+  }
+  
+  .border-theme-secondary {
+    border-color: rgb(var(--color-border-secondary));
+  }
+  
+  .shadow-theme-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .shadow-theme-md {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .shadow-theme-lg {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .shadow-theme-xl {
+    box-shadow: var(--shadow-xl);
+  }
+}
