@@ -74,7 +74,7 @@ function App() {
             {isMobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <h1 className="font-bold text-theme-text-primary text-base truncate flex-1 text-center mx-4">
-            {currentSession?.title || 'AI Agent'}
+            {currentSession?.title || 'Hedron Agent'}
           </h1>
           <div className="flex items-center gap-1.5">
             <ThemeToggle variant="compact" />
@@ -119,7 +119,7 @@ function App() {
               
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg font-bold text-theme-text-primary truncate">
-                  {currentSession?.title || 'AI Agent'}
+                  {currentSession?.title || 'Hedron Agent'}
                 </h1>
                 <p className="text-xs text-theme-text-secondary mt-0.5 font-medium">
                   {currentSession ? `${currentSession.messages.length} messages` : 'Start a new conversation'}

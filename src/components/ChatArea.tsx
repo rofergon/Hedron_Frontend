@@ -27,7 +27,7 @@ export default function ChatArea({ messages, isLoading }: ChatAreaProps) {
             <Bot size={36} className="text-blue-600 dark:text-blue-400" />
           </div>
           <h2 className="text-3xl font-bold text-theme-text-primary mb-3">
-            Welcome to AI Agent
+            Welcome to Hedron Agent
           </h2>
           <p className="text-theme-text-secondary max-w-md mx-auto text-lg leading-relaxed">
             Start a conversation with your AI assistant. Ask questions, get help, 

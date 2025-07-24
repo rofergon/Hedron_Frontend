@@ -73,8 +73,8 @@ const wagmiAdapter = new WagmiAdapter({
 
 // Set up metadata
 const metadata = {
-  name: 'AI Agent Chat Interface',
-  description: 'AI Agent Chat Interface with Wallet Integration',
+  name: 'Hedron Agent Chat Interface',
+  description: 'Hedron Agent Chat Interface with Wallet Integration',
   url: typeof window !== 'undefined' ? window.location.origin : '',
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }

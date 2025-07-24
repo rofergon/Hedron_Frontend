@@ -203,7 +203,7 @@ export default function ChatSidebar({
           </div>
           
           <div className="text-xs text-gray-400 text-center space-y-1">
-            <div className="font-medium">AI Agent Interface</div>
+            <div className="font-medium">Hedron Agent Interface</div>
             <div className="opacity-75">Powered by Advanced AI</div>
           </div>
         </div>
