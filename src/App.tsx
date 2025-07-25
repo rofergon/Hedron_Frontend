@@ -127,8 +127,6 @@ function App() {
         <ChatSidebar
           sessions={sessions}
           currentSessionId={currentSession?.id || null}
-          isWalletConnected={isWalletConnected}
-          walletAccount={walletAccount}
           onToggleSidebar={() => setIsSidebarHidden(true)}
           onNewChat={handleNewChat}
           onSelectChat={handleSelectChat}
