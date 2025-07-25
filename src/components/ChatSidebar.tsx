@@ -1,13 +1,10 @@
 import React from 'react';
 import { Plus, MessageSquare, Trash2, Edit3, PanelLeftClose } from 'lucide-react';
 import { ChatSession } from '../types/chat';
-import WalletButton from './WalletButton';
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
   currentSessionId: string | null;
-  isWalletConnected?: boolean;
-  walletAccount?: string | null | `0x${string}`;
   onToggleSidebar?: () => void;
   onNewChat: () => void;
   onSelectChat: (sessionId: string) => void;
@@ -20,8 +17,6 @@ interface ChatSidebarProps {
 export default function ChatSidebar({
   sessions,
   currentSessionId,
-  isWalletConnected = false,
-  walletAccount = null,
   onToggleSidebar,
   onNewChat,
   onSelectChat,
@@ -197,11 +192,6 @@ export default function ChatSidebar({
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-700/50">
-          {/* Connect Wallet Button */}
-          <div className="mb-4">
-            <WalletButton className="w-full px-4 py-3 rounded-xl" />
-          </div>
-          
           <div className="text-xs text-gray-400 text-center space-y-1">
             <div className="font-medium">Hedron Agent Interface</div>
             <div className="opacity-75">Powered by Advanced AI</div>

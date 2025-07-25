@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Wallet, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, X, Wallet, PanelLeftClose, PanelLeftOpen, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import ChatSidebar from './components/ChatSidebar';
 import ChatArea from './components/ChatArea';
 import ChatInput from './components/ChatInput';
@@ -27,6 +27,9 @@ function App() {
     sessions,
     currentSession,
     isLoading,
+    isConnected: isWSConnected,
+    isConnecting: isWSConnecting,
+    wsError,
     createNewSession,
     selectSession,
     deleteSession,
@@ -42,7 +45,7 @@ function App() {
   const walletAccount = address ? formatAddress(address) : null;
 
   const handleSendMessage = async () => {
-    if (message.trim() && !isLoading) {
+    if (message.trim() && !isLoading && isWSConnected) {
       const messageToSend = message;
       setMessage('');
       await sendMessage(messageToSend);
@@ -59,6 +62,34 @@ function App() {
     setIsMobileSidebarOpen(false);
   };
 
+  // Connection status component
+  const ConnectionStatus = ({ className = "" }: { className?: string }) => {
+    if (isWSConnecting) {
+      return (
+        <div className={`flex items-center gap-2 text-yellow-600 dark:text-yellow-400 ${className}`}>
+          <Wifi size={16} className="animate-pulse" />
+          <span className="text-xs font-medium">Connecting...</span>
+        </div>
+      );
+    }
+
+    if (!isWSConnected) {
+      return (
+        <div className={`flex items-center gap-2 text-red-600 dark:text-red-400 ${className}`}>
+          <WifiOff size={16} />
+          <span className="text-xs font-medium">Disconnected</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`flex items-center gap-2 text-green-600 dark:text-green-400 ${className}`}>
+        <Wifi size={16} />
+        <span className="text-xs font-medium">Connected</span>
+      </div>
+    );
+  };
+
   return (
     <div className="h-screen bg-theme-bg-primary dark:bg-gray-900 flex transition-colors duration-300">
       {/* Mobile header */}
@@ -70,9 +101,12 @@ function App() {
           >
             {isMobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <h1 className="font-bold text-theme-text-primary text-base truncate flex-1 text-center mx-4">
-            {currentSession?.title || 'Hedron Agent'}
-          </h1>
+          <div className="flex-1 text-center mx-4">
+            <h1 className="font-bold text-theme-text-primary text-base truncate">
+              {currentSession?.title || 'Hedron Agent'}
+            </h1>
+            <ConnectionStatus />
+          </div>
           <div className="flex items-center gap-1.5">
             <ThemeToggle variant="compact" />
             <WalletButton variant="compact" />
@@ -80,13 +114,19 @@ function App() {
         </div>
       </div>
 
+      {/* Connection Error Alert */}
+      {wsError && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 max-w-md">
+          <AlertCircle size={16} />
+          <span className="text-sm font-medium">{wsError}</span>
+        </div>
+      )}
+
       {/* Sidebar */}
       {!isSidebarHidden && (
         <ChatSidebar
           sessions={sessions}
           currentSessionId={currentSession?.id || null}
-          isWalletConnected={isWalletConnected}
-          walletAccount={walletAccount}
           onToggleSidebar={() => setIsSidebarHidden(true)}
           onNewChat={handleNewChat}
           onSelectChat={handleSelectChat}
@@ -118,9 +158,12 @@ function App() {
                 <h1 className="text-lg font-bold text-theme-text-primary truncate">
                   {currentSession?.title || 'Hedron Agent'}
                 </h1>
-                <p className="text-xs text-theme-text-secondary mt-0.5 font-medium">
-                  {currentSession ? `${currentSession.messages.length} messages` : 'Start a new conversation'}
-                </p>
+                <div className="flex items-center gap-4 mt-0.5">
+                  <p className="text-xs text-theme-text-secondary font-medium">
+                    {currentSession ? `${currentSession.messages.length} messages` : 'Start a new conversation'}
+                  </p>
+                  <ConnectionStatus />
+                </div>
               </div>
             </div>
             
@@ -153,7 +196,8 @@ function App() {
             message={message}
             setMessage={setMessage}
             onSendMessage={handleSendMessage}
-            isLoading={isLoading}
+            isLoading={isLoading || !isWSConnected}
+            isConnected={isWSConnected}
           />
         </div>
       </div>
