@@ -21,8 +21,8 @@ export default function ChatArea({ messages, isLoading }: ChatAreaProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-theme-bg-primary to-theme-bg-secondary dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-theme-bg-primary to-theme-bg-secondary dark:from-gray-900 dark:to-gray-800 min-h-0 h-full">
+        <div className="text-center px-4">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-theme-lg">
             <img 
               src="/hedron-bot.png" 
@@ -48,34 +48,46 @@ export default function ChatArea({ messages, isLoading }: ChatAreaProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gradient-to-b from-theme-bg-primary/50 to-theme-bg-secondary dark:from-gray-900/50 dark:to-gray-800">
-      <div className="max-w-4xl mx-auto p-8">
-        {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
-        ))}
-        
-        {isLoading && (
-          <div className="flex gap-4 mb-8 group">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-theme-md">
-              <img 
-                src="/hedron-bot.png" 
-                alt="Hedron Bot" 
-                className="w-10 h-10 object-cover rounded-full"
-              />
-            </div>
-            <div className="flex-1 max-w-[80%]">
-              <div className="inline-block px-5 py-4 rounded-2xl rounded-bl-md bg-theme-bg-secondary dark:bg-gray-800 border border-theme-border-primary dark:border-gray-700 shadow-theme-sm">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" />
-                  <div className="w-2.5 h-2.5 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                  <div className="w-2.5 h-2.5 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+    <div className="flex-1 h-full bg-gradient-to-b from-theme-bg-primary/50 to-theme-bg-secondary dark:from-gray-900/50 dark:to-gray-800 overflow-hidden">
+      {/* Scrollable messages container */}
+      <div 
+        className="h-full overflow-y-auto overflow-x-hidden" 
+        style={{ 
+          scrollbarWidth: 'thin',
+          scrollBehavior: 'smooth'
+        }}
+      >
+        <div className="w-full max-w-4xl mx-auto px-4 py-6 space-y-6">
+          {/* Messages */}
+          {messages.map((message) => (
+            <ChatMessage key={message.id} message={message} />
+          ))}
+          
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="flex gap-4 group">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-theme-md">
+                <img 
+                  src="/hedron-bot.png" 
+                  alt="Hedron Bot" 
+                  className="w-10 h-10 object-cover rounded-full"
+                />
+              </div>
+              <div className="flex-1 max-w-[85%]">
+                <div className="inline-block px-5 py-4 rounded-2xl rounded-bl-md bg-theme-bg-secondary dark:bg-gray-800 border border-theme-border-primary dark:border-gray-700 shadow-theme-sm">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" />
+                    <div className="w-2.5 h-2.5 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                    <div className="w-2.5 h-2.5 bg-blue-400 dark:bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
+          )}
+          
+          {/* Scroll target with more space */}
+          <div ref={messagesEndRef} className="h-8" />
+        </div>
       </div>
     </div>
   );
