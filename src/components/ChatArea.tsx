@@ -23,8 +23,12 @@ export default function ChatArea({ messages, isLoading }: ChatAreaProps) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-theme-bg-primary to-theme-bg-secondary dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/50 dark:to-blue-800/50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-theme-lg">
-            <Bot size={36} className="text-blue-600 dark:text-blue-400" />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-theme-lg">
+            <img 
+              src="/hedron-bot.png" 
+              alt="Hedron Bot" 
+              className="w-20 h-20 object-cover rounded-full"
+            />
           </div>
           <h2 className="text-3xl font-bold text-theme-text-primary mb-3">
             Welcome to Hedron Agent
@@ -52,8 +56,12 @@ export default function ChatArea({ messages, isLoading }: ChatAreaProps) {
         
         {isLoading && (
           <div className="flex gap-4 mb-8 group">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-600 dark:to-gray-700 text-gray-200 dark:text-gray-300 flex items-center justify-center flex-shrink-0 shadow-theme-md">
-              <Bot size={18} />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-theme-md">
+              <img 
+                src="/hedron-bot.png" 
+                alt="Hedron Bot" 
+                className="w-10 h-10 object-cover rounded-full"
+              />
             </div>
             <div className="flex-1 max-w-[80%]">
               <div className="inline-block px-5 py-4 rounded-2xl rounded-bl-md bg-theme-bg-secondary dark:bg-gray-800 border border-theme-border-primary dark:border-gray-700 shadow-theme-sm">
