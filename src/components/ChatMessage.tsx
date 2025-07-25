@@ -20,6 +20,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       }
       return <Settings size={18} />;
     }
+    // This won't be used for bot messages since they render image directly
     return <Bot size={18} />;
   };
 
@@ -35,7 +36,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       }
       return 'bg-gradient-to-br from-purple-600 to-purple-700 text-white';
     }
-    return 'bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-600 dark:to-gray-700 text-gray-200 dark:text-gray-300';
+    // For assistant/bot messages, no background - just the image
+    return '';
   };
 
   const getMessageStyle = () => {
@@ -56,13 +58,23 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className={`flex gap-4 mb-8 ${isUser ? 'flex-row-reverse' : ''} group`}>
       {/* Avatar */}
-      <div className={`
-        w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md
-        transition-transform duration-200 group-hover:scale-105
-        ${getAvatarStyle()}
-      `}>
-        {getIcon()}
-      </div>
+      {!isUser && !isSystem ? (
+        // For bot messages, show image directly without container
+        <img 
+          src="/hedron-bot.png" 
+          alt="Hedron Bot" 
+          className="w-10 h-10 object-cover rounded-full flex-shrink-0 shadow-md transition-transform duration-200 group-hover:scale-105"
+        />
+      ) : (
+        // For user and system messages, use icon container
+        <div className={`
+          w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md
+          transition-transform duration-200 group-hover:scale-105
+          ${getAvatarStyle()}
+        `}>
+          {getIcon()}
+        </div>
+      )}
 
       {/* Message Content */}
       <div className={`
