@@ -76,38 +76,84 @@
   }
 }
 
+/* Custom scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156 163 175 / 0.3) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgb(75 85 99 / 0.5) transparent;
+}
+
+/* Webkit scrollbar styles for Chromium browsers */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(156 163 175 / 0.3);
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(156 163 175 / 0.5);
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background-color: rgb(75 85 99 / 0.5);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(75 85 99 / 0.7);
+}
+
 /* Custom utility classes using CSS variables */
 @layer utilities {
-  .bg-theme-primary {
+  .bg-theme-bg-primary {
     background-color: rgb(var(--color-bg-primary));
   }
   
-  .bg-theme-secondary {
+  .bg-theme-bg-secondary {
     background-color: rgb(var(--color-bg-secondary));
   }
   
-  .bg-theme-tertiary {
+  .bg-theme-bg-tertiary {
     background-color: rgb(var(--color-bg-tertiary));
   }
   
-  .text-theme-primary {
+  .text-theme-text-primary {
     color: rgb(var(--color-text-primary));
   }
   
-  .text-theme-secondary {
+  .text-theme-text-secondary {
     color: rgb(var(--color-text-secondary));
   }
   
-  .text-theme-tertiary {
+  .text-theme-text-tertiary {
     color: rgb(var(--color-text-tertiary));
   }
   
-  .border-theme-primary {
+  .border-theme-border-primary {
     border-color: rgb(var(--color-border-primary));
   }
   
-  .border-theme-secondary {
+  .border-theme-border-secondary {
     border-color: rgb(var(--color-border-secondary));
+  }
+  
+  .bg-theme-accent {
+    background-color: rgb(var(--color-accent-primary));
+  }
+  
+  .bg-theme-accent-hover {
+    background-color: rgb(var(--color-accent-hover));
   }
   
   .shadow-theme-sm {
@@ -124,5 +170,80 @@
   
   .shadow-theme-xl {
     box-shadow: var(--shadow-xl);
+  }
+
+  /* Improved text rendering */
+  .text-render-optimized {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Scroll smooth utility */
+  .scroll-smooth-custom {
+    scroll-behavior: smooth;
+    scroll-padding-top: 1rem;
+  }
+
+  /* Better focus styles */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500;
+  }
+}
+
+/* Global improvements */
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply text-render-optimized;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+  
+  /* Improved button and input focus states */
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply focus-ring;
+  }
+  
+  /* Better text selection colors */
+  ::selection {
+    background-color: rgb(59 130 246 / 0.2);
+    color: inherit;
+  }
+  
+  .dark ::selection {
+    background-color: rgb(96 165 250 / 0.3);
+    color: inherit;
+  }
+
+  /* Better word wrapping for chat messages */
+  .word-wrap {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  /* Chat layout specific fixes */
+  .chat-container {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
+  .chat-messages-area {
+    height: calc(100vh - 200px); /* Adjust based on header and input height */
+    min-height: 0;
+    flex: 1;
+  }
+
+  @media (max-width: 1024px) {
+    .chat-messages-area {
+      height: calc(100vh - 160px); /* Adjust for mobile */
+    }
   }
 }
