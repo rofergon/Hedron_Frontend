@@ -19,13 +19,13 @@ export const appMetadata = {
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }
 
-// Create HashConnect instance for mainnet (matches HashPack default)
+// Create HashConnect instance for testnet
 export const createHashConnect = () => {
-  console.log('🚀 Creating HashConnect instance for Hedera Mainnet')
+  console.log('🚀 Creating HashConnect instance for Hedera Testnet')
   console.log('📋 Project ID:', projectId.slice(0, 8) + '...')
   
   return new HashConnect(
-    LedgerId.MAINNET,  // Changed to MAINNET to match HashPack default
+    LedgerId.TESTNET,  // Changed to TESTNET for development
     projectId,
     appMetadata,
     true // Enable debug mode
