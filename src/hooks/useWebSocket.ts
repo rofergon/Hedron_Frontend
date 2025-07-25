@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { WSIncomingMessage, WSOutgoingMessage, WSUserMessage, WSTransactionResult } from '../types/chat';
+import { WSIncomingMessage, WSOutgoingMessage, WSUserMessage, WSTransactionResult, WSConnectionAuth } from '../types/chat';
 
 export interface UseWebSocketReturn {
   isConnected: boolean;
   isConnecting: boolean;
+  isAuthenticated: boolean;
   error: string | null;
-  sendMessage: (message: string) => void;
+  sendMessage: (message: string, userAccountId: string) => void;
   sendTransactionResult: (result: Omit<WSTransactionResult, 'type'>) => void;
+  authenticate: (userAccountId: string) => void;
   lastMessage: WSIncomingMessage | null;
 }
 
 export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState<WSIncomingMessage | null>(null);
   
@@ -42,6 +45,12 @@ export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketR
           const message: WSIncomingMessage = JSON.parse(event.data);
           console.log('📨 Received message:', message);
           setLastMessage(message);
+
+          // Check for authentication success
+          if (message.type === 'SYSTEM_MESSAGE' && message.message.includes('Authenticated successfully')) {
+            setIsAuthenticated(true);
+            console.log('✅ Authentication completed!');
+          }
         } catch (err) {
           console.error('❌ Failed to parse WebSocket message:', err);
           setError('Failed to parse message from server');
@@ -52,6 +61,7 @@ export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketR
         console.log('🔌 WebSocket connection closed:', event.code, event.reason);
         setIsConnected(false);
         setIsConnecting(false);
+        setIsAuthenticated(false);
 
         // Auto-reconnect after 3 seconds unless it was a clean close
         if (event.code !== 1000) {
@@ -88,17 +98,47 @@ export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketR
 
     setIsConnected(false);
     setIsConnecting(false);
+    setIsAuthenticated(false);
   }, []);
 
-  const sendMessage = useCallback((message: string) => {
+  const authenticate = useCallback((userAccountId: string) => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       setError('Not connected to backend');
+      return;
+    }
+
+    console.log(`🔐 Authenticating with account: ${userAccountId}`);
+    
+    const authMessage: WSConnectionAuth = {
+      type: 'CONNECTION_AUTH',
+      userAccountId,
+      timestamp: Date.now()
+    };
+
+    try {
+      ws.current.send(JSON.stringify(authMessage));
+      console.log('📤 Sent authentication:', authMessage);
+    } catch (err) {
+      console.error('❌ Failed to send authentication:', err);
+      setError('Failed to authenticate');
+    }
+  }, []);
+
+  const sendMessage = useCallback((message: string, userAccountId: string) => {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected to backend');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setError('Not authenticated. Please authenticate first.');
       return;
     }
 
     const userMessage: WSUserMessage = {
       type: 'USER_MESSAGE',
       message,
+      userAccountId,
       timestamp: Date.now()
     };
 
@@ -109,7 +149,7 @@ export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketR
       console.error('❌ Failed to send message:', err);
       setError('Failed to send message');
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const sendTransactionResult = useCallback((result: Omit<WSTransactionResult, 'type'>) => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
@@ -140,9 +180,11 @@ export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketR
   return {
     isConnected,
     isConnecting,
+    isAuthenticated,
     error,
     sendMessage,
     sendTransactionResult,
+    authenticate,
     lastMessage
   };
 } 
