@@ -36,7 +36,7 @@ export default function ChatInput({
   };
 
   return (
-    <div className="border-t border-theme-border-primary dark:border-gray-700 bg-gradient-to-r from-theme-bg-secondary to-theme-bg-primary/50 dark:from-gray-800 dark:to-gray-900/50 p-6">
+    <div className="border-t border-theme-border-primary dark:border-gray-700 bg-gradient-to-r from-theme-bg-secondary to-theme-bg-primary/50 dark:from-gray-800 dark:to-gray-900/50 p-6 flex-shrink-0">
       <div className="flex gap-4 items-end max-w-4xl mx-auto">
         <div className="flex-1 relative">
           <textarea
