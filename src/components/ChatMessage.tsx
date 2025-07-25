@@ -56,7 +56,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   };
 
   return (
-    <div className={`flex gap-4 mb-8 ${isUser ? 'flex-row-reverse' : ''} group`}>
+    <div className={`flex gap-4 ${isUser ? 'flex-row-reverse' : ''} group w-full`}>
       {/* Avatar */}
       {!isUser && !isSystem ? (
         // For bot messages, show image directly without container
@@ -78,14 +78,14 @@ export default function ChatMessage({ message }: ChatMessageProps) {
 
       {/* Message Content */}
       <div className={`
-        flex-1 max-w-[85%] ${isUser ? 'text-right' : ''}
+        flex-1 min-w-0 ${isUser ? 'text-right flex flex-col items-end max-w-[85%]' : 'flex flex-col items-start max-w-[85%]'}
       `}>
         <div className={`
           inline-block px-5 py-4 rounded-2xl text-sm leading-relaxed shadow-sm
-          transition-all duration-200 hover:shadow-theme-md
+          transition-all duration-200 hover:shadow-theme-md w-auto max-w-full
           ${getMessageStyle()}
         `}>
-          <div className="whitespace-pre-wrap break-words font-medium">
+          <div className="whitespace-pre-wrap break-words font-medium word-wrap">
             {message.content}
           </div>
 
@@ -112,7 +112,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         
         {/* Timestamp */}
         <div className={`
-          text-xs text-theme-text-tertiary mt-2 font-medium
+          text-xs text-theme-text-tertiary mt-2 font-medium px-1
           ${isUser ? 'text-right' : 'text-left'}
         `}>
           {message.timestamp.toLocaleTimeString([], { 
