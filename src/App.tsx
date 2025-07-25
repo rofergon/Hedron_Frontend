@@ -7,14 +7,21 @@ import ThemeToggle from './components/ThemeToggle';
 import WalletButton from './components/WalletButton';
 import { useTheme } from './hooks/useTheme';
 import { useChat } from './hooks/useChat';
+import { useWallet } from './hooks/useWallet';
 
 function App() {
   // Initialize theme
   useTheme();
   
-  // Mock wallet connection state - replace with actual wallet integration
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [walletAccount, setWalletAccount] = useState<string | null>(null);
+  // Real wallet connection using HashConnect
+  const { 
+    address, 
+    isConnected: isWalletConnected, 
+    isConnecting,
+    connect: handleWalletConnect,
+    disconnect,
+    formatAddress
+  } = useWallet();
 
   const {
     sessions,
@@ -31,18 +38,8 @@ function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
 
-  // Mock wallet connection function
-  const handleWalletConnect = () => {
-    if (isWalletConnected) {
-      // Disconnect
-      setIsWalletConnected(false);
-      setWalletAccount(null);
-    } else {
-      // Connect (mock)
-      setIsWalletConnected(true);
-      setWalletAccount('0.0.123456');
-    }
-  };
+  // Wallet account formatting for display
+  const walletAccount = address ? formatAddress(address) : null;
 
   const handleSendMessage = async () => {
     if (message.trim() && !isLoading) {
