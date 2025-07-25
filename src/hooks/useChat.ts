@@ -100,6 +100,7 @@ export function useChat() {
   const handleTransactionToSign = async (message: WSTransactionToSign, sessionId: string) => {
     if (!isWalletConnected || !address || !hashconnect) {
       console.error('❌ Wallet not connected for transaction signing');
+      setIsLoading(false); // Clear loading since we can't proceed
       return;
     }
 
@@ -157,6 +158,9 @@ export function useChat() {
             }
           : session
       ));
+
+      // Clear loading state on error
+      setIsLoading(false);
     }
   };
 
@@ -237,6 +241,9 @@ export function useChat() {
         return newMap;
       });
 
+      // Clear loading state since transaction process is complete
+      setIsLoading(false);
+
     } catch (error) {
       console.error('❌ Failed to sign transaction:', error);
       
@@ -271,6 +278,9 @@ export function useChat() {
         newMap.delete(messageId);
         return newMap;
       });
+
+      // Clear loading state even on failure
+      setIsLoading(false);
 
       throw error;
     }
