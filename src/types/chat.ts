@@ -23,9 +23,16 @@ export interface ChatSession {
 }
 
 // WebSocket message types
+export interface WSConnectionAuth {
+  type: 'CONNECTION_AUTH';
+  userAccountId: string;
+  timestamp: number;
+}
+
 export interface WSUserMessage {
   type: 'USER_MESSAGE';
   message: string;
+  userAccountId: string;
   timestamp: number;
 }
 
@@ -56,4 +63,4 @@ export interface WSTransactionResult {
 }
 
 export type WSIncomingMessage = WSAgentResponse | WSSystemMessage | WSTransactionToSign;
-export type WSOutgoingMessage = WSUserMessage | WSTransactionResult;
+export type WSOutgoingMessage = WSConnectionAuth | WSUserMessage | WSTransactionResult;
