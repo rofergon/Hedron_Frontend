@@ -29,6 +29,8 @@ function App() {
     isLoading,
     isConnected: isWSConnected,
     isConnecting: isWSConnecting,
+    isAuthenticated,
+    isWalletConnected: isChatWalletConnected,
     wsError,
     createNewSession,
     selectSession,
@@ -45,7 +47,7 @@ function App() {
   const walletAccount = address ? formatAddress(address) : null;
 
   const handleSendMessage = async () => {
-    if (message.trim() && !isLoading && isWSConnected) {
+    if (message.trim() && !isLoading && isWSConnected && isAuthenticated && isWalletConnected) {
       const messageToSend = message;
       setMessage('');
       await sendMessage(messageToSend);
@@ -82,10 +84,28 @@ function App() {
       );
     }
 
+    if (!isWalletConnected) {
+      return (
+        <div className={`flex items-center gap-2 text-orange-600 dark:text-orange-400 ${className}`}>
+          <Wallet size={16} />
+          <span className="text-xs font-medium">Wallet Required</span>
+        </div>
+      );
+    }
+
+    if (!isAuthenticated) {
+      return (
+        <div className={`flex items-center gap-2 text-blue-600 dark:text-blue-400 ${className}`}>
+          <Wifi size={16} className="animate-pulse" />
+          <span className="text-xs font-medium">Authenticating...</span>
+        </div>
+      );
+    }
+
     return (
       <div className={`flex items-center gap-2 text-green-600 dark:text-green-400 ${className}`}>
         <Wifi size={16} />
-        <span className="text-xs font-medium">Connected</span>
+        <span className="text-xs font-medium">Connected & Ready</span>
       </div>
     );
   };
@@ -196,8 +216,8 @@ function App() {
             message={message}
             setMessage={setMessage}
             onSendMessage={handleSendMessage}
-            isLoading={isLoading || !isWSConnected}
-            isConnected={isWSConnected}
+            isLoading={isLoading || !isWSConnected || !isAuthenticated || !isWalletConnected}
+            isConnected={isWSConnected && isAuthenticated && isWalletConnected}
           />
         </div>
       </div>
