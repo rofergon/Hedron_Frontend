@@ -92,24 +92,37 @@ export function useWallet() {
     }
   }, [address, connectionState])
 
-  const connect = useCallback(async () => {
-    if (!hashconnect) {
-      setError('Wallet not initialized')
-      return
-    }
-    
-    try {
-      setIsConnecting(true)
-      setError(null)
-      console.log('🔗 Opening pairing modal...')
-      // Open pairing modal
-      hashconnect.openPairingModal()
-    } catch (error) {
-      console.error('❌ Failed to connect:', error)
-      setError(error instanceof Error ? error.message : 'Failed to connect to wallet')
-      setIsConnecting(false)
-    }
-  }, [hashconnect])
+  // Ref to track if modal is already opened
+  // This prevents multiple modals from being opened simultaneously
+
+  const modalOpenedRef = useRef(false)
+
+const connect = useCallback(async () => {
+  if (!hashconnect) {
+    setError('Wallet not initialized')
+    return
+  }
+
+  if (modalOpenedRef.current) {
+    console.log('⏳ Modal already open')
+    return
+  }
+
+  try {
+    setIsConnecting(true)
+    setError(null)
+    modalOpenedRef.current = true
+    console.log('🔗 Opening pairing modal...')
+    hashconnect.openPairingModal()
+  } catch (error) {
+    console.error('Failed to connect:', error)
+    setError(error instanceof Error ? error.message : 'Failed to connect to wallet')
+  } finally {
+    setIsConnecting(false)
+    modalOpenedRef.current = false 
+  }
+}, [hashconnect])
+
 
   const disconnect = useCallback(async () => {
     if (!hashconnect) return
