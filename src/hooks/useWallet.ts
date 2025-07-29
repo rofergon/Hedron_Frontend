@@ -147,10 +147,13 @@ export function useWallet() {
   const isConnected = connectionState === HashConnectConnectionState.Paired && !!sessionData
   const isDisconnected = connectionState === HashConnectConnectionState.Disconnected
 
-  // Mock chain object for compatibility
+  // Chain object for current Hedera network
+  const networkConfig = import.meta.env.VITE_HEDERA_NETWORK || 'mainnet'
+  const networkName = networkConfig.charAt(0).toUpperCase() + networkConfig.slice(1).toLowerCase()
+  
   const chain = {
-    id: 295,
-    name: 'Hedera Mainnet'
+    id: networkConfig.toLowerCase() === 'testnet' ? 296 : networkConfig.toLowerCase() === 'previewnet' ? 297 : 295,
+    name: `Hedera ${networkName}`
   }
 
   return {
