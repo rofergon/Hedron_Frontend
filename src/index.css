@@ -228,6 +228,47 @@
     hyphens: auto;
   }
 
+  /* Font size overrides - 20% larger than default Tailwind sizes */
+  .text-xs {
+    font-size: 14.4px !important; /* 12px * 1.2 */
+    line-height: 1.25;
+  }
+
+  .text-sm {
+    font-size: 16.8px !important; /* 14px * 1.2 */
+    line-height: 1.25;
+  }
+
+  .text-base {
+    font-size: 19.2px !important; /* 16px * 1.2 */
+    line-height: 1.5;
+  }
+
+  .text-lg {
+    font-size: 21.6px !important; /* 18px * 1.2 */
+    line-height: 1.5;
+  }
+
+  .text-xl {
+    font-size: 24px !important; /* 20px * 1.2 */
+    line-height: 1.5;
+  }
+
+  .text-2xl {
+    font-size: 28.8px !important; /* 24px * 1.2 */
+    line-height: 1.3;
+  }
+
+  .text-3xl {
+    font-size: 36px !important; /* 30px * 1.2 */
+    line-height: 1.2;
+  }
+
+  .text-4xl {
+    font-size: 43.2px !important; /* 36px * 1.2 */
+    line-height: 1.1;
+  }
+
   /* Chat layout specific fixes */
   .chat-container {
     height: 100vh;
