@@ -1,5 +1,5 @@
-import React from 'react';
 import { Bot, User, Settings, CreditCard, CheckCircle, Clock } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Message } from '../types/chat';
 
 interface ChatMessageProps {
@@ -9,6 +9,7 @@ interface ChatMessageProps {
 export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
+  const isAI = message.sender === 'ai';
   
   const getIcon = () => {
     if (isUser) return <User size={18} />;
@@ -55,6 +56,71 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     return 'bg-theme-bg-secondary dark:bg-gray-800 text-theme-text-primary rounded-bl-md border border-theme-border-primary dark:border-gray-700';
   };
 
+  const renderMessageContent = () => {
+    if (isAI) {
+      return (
+        <ReactMarkdown
+          components={{
+            h1: (props: any) => (
+              <h1 className="text-xl font-bold mb-4 text-theme-text-primary dark:text-white border-b border-theme-border-primary dark:border-gray-600 pb-2">
+                {props.children}
+              </h1>
+            ),
+            h2: (props: any) => (
+              <h2 className="text-lg font-bold mb-3 text-theme-text-primary dark:text-white">
+                {props.children}
+              </h2>
+            ),
+            h3: (props: any) => (
+              <h3 className="text-base font-bold mb-3 text-theme-text-primary dark:text-white border-b border-theme-border-primary dark:border-gray-600 pb-1">
+                {props.children}
+              </h3>
+            ),
+            p: (props: any) => (
+              <p className="mb-3 last:mb-0 leading-relaxed">
+                {props.children}
+              </p>
+            ),
+            ul: (props: any) => (
+              <ul className="mb-3 space-y-1">
+                {props.children}
+              </ul>
+            ),
+            li: (props: any) => (
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 dark:text-blue-400 font-bold mt-1">•</span>
+                <span className="flex-1">{props.children}</span>
+              </li>
+            ),
+            strong: (props: any) => (
+              <strong className="font-semibold text-theme-text-primary dark:text-white">
+                {props.children}
+              </strong>
+            ),
+            code: (props: any) => (
+              <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono">
+                {props.children}
+              </code>
+            ),
+            pre: (props: any) => (
+              <pre className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg overflow-x-auto mb-3">
+                {props.children}
+              </pre>
+            ),
+          }}
+        >
+          {message.content}
+        </ReactMarkdown>
+      );
+    }
+    
+    return (
+      <div className="whitespace-pre-wrap break-words font-medium word-wrap">
+        {message.content}
+      </div>
+    );
+  };
+
   return (
     <div className={`flex gap-4 ${isUser ? 'flex-row-reverse' : ''} group w-full`}>
       {/* Avatar */}
@@ -85,9 +151,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           transition-all duration-200 hover:shadow-theme-md w-auto max-w-full
           ${getMessageStyle()}
         `}>
-          <div className="whitespace-pre-wrap break-words font-medium word-wrap">
-            {message.content}
-          </div>
+          {renderMessageContent()}
 
           {/* Transaction Status Indicator */}
           {message.hasTransaction && message.transactionData && (
