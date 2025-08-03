@@ -1,14 +1,14 @@
 import React from 'react';
-import { Bot } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import { Message } from '../types/chat';
 
 interface ChatAreaProps {
   messages: Message[];
   isLoading: boolean;
+  onExecuteSwap?: (content: string) => void;
 }
 
-export default function ChatArea({ messages, isLoading }: ChatAreaProps) {
+export default function ChatArea({ messages, isLoading, onExecuteSwap }: ChatAreaProps) {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -60,7 +60,7 @@ export default function ChatArea({ messages, isLoading }: ChatAreaProps) {
         <div className="w-full max-w-4xl mx-auto px-4 py-6 space-y-6">
           {/* Messages */}
           {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+            <ChatMessage key={message.id} message={message} onExecuteSwap={onExecuteSwap} />
           ))}
           
           {/* Loading indicator */}
