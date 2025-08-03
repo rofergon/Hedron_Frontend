@@ -48,6 +48,12 @@ function App() {
     }
   };
 
+  const handleSendPrompt = async (promptMessage: string) => {
+    if (promptMessage.trim() && !isLoading && isWSConnected && isAuthenticated && isWalletConnected) {
+      await sendMessage(promptMessage);
+    }
+  };
+
   const handleNewChat = () => {
     createNewSession();
     setIsMobileSidebarOpen(false);
@@ -208,6 +214,7 @@ function App() {
                 await sendMessage(swapMessage);
               }
             }}
+            onSendMessage={handleSendPrompt}
           />
 
           {/* Message input */}

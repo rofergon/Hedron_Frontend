@@ -6,9 +6,10 @@ interface ChatAreaProps {
   messages: Message[];
   isLoading: boolean;
   onExecuteSwap?: (content: string) => void;
+  onSendMessage?: (message: string) => void;
 }
 
-export default function ChatArea({ messages, isLoading, onExecuteSwap }: ChatAreaProps) {
+export default function ChatArea({ messages, isLoading, onExecuteSwap, onSendMessage }: ChatAreaProps) {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -19,25 +20,101 @@ export default function ChatArea({ messages, isLoading, onExecuteSwap }: ChatAre
     scrollToBottom();
   }, [messages]);
 
+  // Example prompts organized by category
+  const promptCategories = [
+    {
+      emoji: "📈",
+      title: "Analytics & Market Data",
+      prompts: [
+        "Show me Bonzo Finance lending rates and market statistics",
+        "What are the current SaucerSwap farming opportunities?"
+      ]
+    },
+    {
+      emoji: "💰",
+      title: "DeFi Operations",
+      prompts: [
+        "Deposit 25 HBAR into Bonzo Finance to earn interest",
+        "Show me a quote to trade HBAR for SAUCE and then execute it"
+      ]
+    },
+    {
+      emoji: "🔍",
+      title: "Account & Network Queries",
+      prompts: [
+        "Check my HBAR balance and token holdings",
+        "Show me my account information and transaction history"
+      ]
+    }
+  ];
+
+  const handlePromptClick = (prompt: string) => {
+    if (onSendMessage) {
+      onSendMessage(prompt);
+    }
+  };
+
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-theme-bg-primary to-theme-bg-secondary dark:from-gray-900 dark:to-gray-800 min-h-0 h-full">
-        <div className="text-center px-4">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-theme-lg">
-            <img 
-              src="/hedron-bot.png" 
-              alt="Hedron Bot" 
-              className="w-20 h-20 object-cover rounded-full"
-            />
+      <div className="flex-1 bg-gradient-to-br from-theme-bg-primary to-theme-bg-secondary dark:from-gray-900 dark:to-gray-800 min-h-0 h-full overflow-y-auto">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          {/* Header Section */}
+          <div className="text-center mb-16">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-theme-lg">
+              <img 
+                src="/hedron-bot.png" 
+                alt="Hedron Bot" 
+                className="w-20 h-20 object-cover rounded-full"
+              />
+            </div>
+            <h2 className="text-3xl font-bold text-theme-text-primary mb-3">
+              Welcome to Hedron Agent
+            </h2>
+            <p className="text-theme-text-secondary max-w-md mx-auto text-lg leading-relaxed">
+              Start a conversation with your AI assistant. Ask questions, get help, 
+              or just have a chat!
+            </p>
           </div>
-          <h2 className="text-3xl font-bold text-theme-text-primary mb-3">
-            Welcome to Hedron Agent
-          </h2>
-          <p className="text-theme-text-secondary max-w-md mx-auto text-lg leading-relaxed">
-            Start a conversation with your AI assistant. Ask questions, get help, 
-            or just have a chat!
-          </p>
-          <div className="mt-8 flex justify-center">
+
+          {/* Example Prompts Grid */}
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {promptCategories.map((category, categoryIndex) => 
+                category.prompts.map((prompt, promptIndex) => (
+                  <button
+                    key={`${categoryIndex}-${promptIndex}`}
+                    onClick={() => handlePromptClick(prompt)}
+                    className="group bg-theme-bg-secondary dark:bg-gray-800 border border-theme-border-primary dark:border-gray-700 
+                             rounded-xl p-4 text-left hover:border-blue-500 dark:hover:border-blue-400 
+                             hover:shadow-theme-lg transition-all duration-200 hover:scale-[1.02] 
+                             active:scale-[0.98] cursor-pointer h-full"
+                  >
+                    <div className="flex items-start gap-2 mb-3">
+                      <span className="text-xl flex-shrink-0">{category.emoji}</span>
+                      <div className="flex-1">
+                        <h4 className="text-xs font-semibold text-theme-text-secondary dark:text-gray-400 mb-1">
+                          {category.title}
+                        </h4>
+                      </div>
+                    </div>
+                    <div className="text-theme-text-primary dark:text-white text-sm leading-relaxed mb-3">
+                      "{prompt}"
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-theme-text-tertiary">
+                        Click to send
+                      </span>
+                      <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full opacity-0 
+                                    group-hover:opacity-100 transition-opacity duration-200"></div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Type message to begin section */}
+          <div className="mt-12 flex justify-center">
             <div className="bg-theme-bg-secondary dark:bg-gray-800 px-6 py-3 rounded-full shadow-theme-md border border-theme-border-primary dark:border-gray-700">
               <span className="text-sm text-theme-text-tertiary font-medium">Type a message to begin</span>
             </div>
