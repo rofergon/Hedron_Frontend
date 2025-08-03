@@ -1,10 +1,94 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ChatSession, Message, TransactionData, WSAgentResponse, WSSystemMessage, WSTransactionToSign } from '../types/chat';
+import { ChatSession, Message, TransactionData, WSAgentResponse, WSSystemMessage, WSTransactionToSign, WSSwapQuote, SwapQuoteData } from '../types/chat';
 import { useWebSocket } from './useWebSocket';
 import { useWallet } from './useWallet';
-import { Transaction, AccountId } from '@hashgraph/sdk';
+import { Transaction } from '@hashgraph/sdk';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
+
+// Function to detect and parse swap quotes from agent messages
+const detectSwapQuote = (content: string): SwapQuoteData | null => {
+  // Check for swap quote indicators
+  const hasSwapIndicator = content.includes('💱 DETECTED SWAP QUOTE:') || 
+                          content.includes('💱 Sending structured swap quote') ||
+                          content.includes('Swap Quote for') ||
+                          content.includes('Exchange Rate Summary:') ||
+                          content.includes('💱 Swap Summary:');
+
+  if (!hasSwapIndicator) return null;
+
+  try {
+    // Parse the content to extract swap data
+    const lines = content.split('\n');
+    
+    // Extract operation type
+    const operationLine = lines.find(line => line.includes('💱 DETECTED SWAP QUOTE:'));
+    const operation = operationLine?.includes('get_amounts_out') ? 'get_amounts_out' : 'get_amounts_in';
+    
+    // Enhanced parsing patterns
+    const inputMatch = content.match(/Input(?:\s+Amount)?:\s*([0-9,.]+)\s+([A-Z]+)/i) ||
+                      content.match(/([0-9,.]+)\s+(HBAR|SAUCE|USDC)(?:\s*(?:to|→))/i) ||
+                      content.match(/pay:\s*([0-9,.]+)\s+(HBAR|SAUCE|USDC)/i);
+    
+    const outputMatch = content.match(/Output(?:\s+Amount)?:\s*([0-9,.]+)\s+([A-Z]+)/i) ||
+                       content.match(/receive:\s*([0-9,.]+)\s+(SAUCE|HBAR|USDC)/i) ||
+                       content.match(/([0-9,.]+)\s+(SAUCE|HBAR|USDC)(?:\s*\(Token ID: ([0-9.]+)\))?/);
+    
+    // Extract exchange rate with more patterns
+    const rateMatch = content.match(/Exchange Rate:\s*1\s+([A-Z]+)\s*=\s*([0-9.]+)\s+([A-Z]+)/i) ||
+                     content.match(/1\s+([A-Z]+)\s*=\s*([0-9.]+)\s+([A-Z]+)/i) ||
+                     content.match(/Rate:\s*([0-9.]+)/i);
+    
+    // Extract token ID with more patterns
+    const tokenIdMatch = content.match(/Token ID:\s*([0-9.]+)/) ||
+                        content.match(/\(([0-9.]+)\)/);
+    
+    // Extract fees with more patterns
+    const feeMatch = content.match(/([0-9.]+)%/) || 
+                    content.match(/fee.*?([0-9.]+)%/i) ||
+                    content.match(/0\.30%/);
+    
+    if (!inputMatch || !outputMatch) {
+      console.log('Could not parse input/output from swap quote:', { inputMatch, outputMatch });
+      return null;
+    }
+
+    const inputAmount = inputMatch[1].replace(/,/g, '');
+    const inputToken = inputMatch[2];
+    const outputAmount = outputMatch[1].replace(/,/g, '');
+    const outputToken = outputMatch[2];
+    const tokenId = tokenIdMatch?.[1] || outputMatch[3] || (outputToken === 'SAUCE' ? '0.0.731861' : '0.0.0');
+    const exchangeRate = rateMatch?.[2] || rateMatch?.[1] || '0.044636';
+    const fee = feeMatch ? parseFloat(feeMatch[1]) * 100 : 3000; // Convert to hundredths of bip
+
+    const swapQuote: SwapQuoteData = {
+      operation: operation as 'get_amounts_out' | 'get_amounts_in',
+      network: 'mainnet',
+      input: {
+        token: inputToken,
+        tokenId: inputToken === 'HBAR' ? '0.0.0' : (inputToken === 'SAUCE' ? '0.0.731861' : '0.0.0'),
+        amount: (parseFloat(inputAmount) * 100000000).toString(), // Convert to tinybars/wei
+        formatted: inputAmount
+      },
+      output: {
+        token: outputToken,
+        tokenId: tokenId,
+        amount: (parseFloat(outputAmount) * 100000000).toString(),
+        formatted: outputAmount
+      },
+      path: [inputToken, outputToken],
+      fees: [fee],
+      exchangeRate: exchangeRate,
+      originalMessage: content
+    };
+
+    console.log('✅ Detected swap quote:', swapQuote);
+    return swapQuote;
+  } catch (error) {
+    console.error('❌ Error parsing swap quote:', error);
+    return null;
+  }
+};
 
 export function useChat() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -53,16 +137,23 @@ export function useChat() {
       case 'TRANSACTION_TO_SIGN':
         handleTransactionToSign(lastMessage, sessionId);
         break;
+      case 'SWAP_QUOTE':
+        handleSwapQuote(lastMessage, sessionId);
+        break;
     }
   }, [lastMessage, currentSessionId]);
 
   const handleAgentResponse = (message: WSAgentResponse, sessionId: string) => {
+    // Check if this message contains a swap quote
+    const swapQuoteData = detectSwapQuote(message.message);
+    
     const aiMessage: Message = {
       id: generateId(),
       content: message.message,
       sender: 'ai',
       timestamp: new Date(),
-      hasTransaction: message.hasTransaction
+      hasTransaction: message.hasTransaction,
+      ...(swapQuoteData && { swapQuote: swapQuoteData })
     };
 
     setSessions(prev => prev.map(session => 
@@ -70,6 +161,28 @@ export function useChat() {
         ? {
             ...session,
             messages: [...session.messages, aiMessage],
+            updatedAt: new Date(),
+          }
+        : session
+    ));
+
+    setIsLoading(false);
+  };
+
+  const handleSwapQuote = (message: WSSwapQuote, sessionId: string) => {
+    const swapMessage: Message = {
+      id: generateId(),
+      content: message.originalMessage,
+      sender: 'ai',
+      timestamp: new Date(),
+      swapQuote: message.quote
+    };
+
+    setSessions(prev => prev.map(session => 
+      session.id === sessionId
+        ? {
+            ...session,
+            messages: [...session.messages, swapMessage],
             updatedAt: new Date(),
           }
         : session
