@@ -56,8 +56,158 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     return 'bg-theme-bg-secondary dark:bg-gray-800 text-theme-text-primary rounded-bl-md border border-theme-border-primary dark:border-gray-700';
   };
 
-  const renderMessageContent = () => {
-    if (isAI) {
+  // Function to detect and parse ASCII tables
+  const parseTableData = (content: string) => {
+    const lines = content.split('\n');
+    const tables: Array<{
+      startIndex: number;
+      endIndex: number;
+      headers: string[];
+      rows: string[][];
+    }> = [];
+    
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      
+      // Look for table patterns - lines with multiple | characters
+      if (line.includes('|') && line.split('|').length >= 3) {
+        // Check if this looks like a header row
+        const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell.length > 0);
+        
+        // Look ahead to see if next line is a separator (dashes)
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          const isSeparator = nextLine.includes('-') && nextLine.includes('|');
+          
+          if (isSeparator || (cells.length >= 2)) {
+            // Found a table! Parse it
+            const headers = cells;
+            const rows: string[][] = [];
+            
+            let tableStartIndex = i;
+            let currentIndex = isSeparator ? i + 2 : i + 1; // Skip separator if present
+            
+            // Parse data rows
+            while (currentIndex < lines.length) {
+              const rowLine = lines[currentIndex];
+              if (rowLine.includes('|') && rowLine.split('|').length >= 3) {
+                const rowCells = rowLine.split('|').map(cell => cell.trim()).filter(cell => cell.length > 0);
+                if (rowCells.length > 0) {
+                  rows.push(rowCells);
+                  currentIndex++;
+                } else {
+                  break;
+                }
+              } else {
+                break;
+              }
+            }
+            
+            if (rows.length > 0) {
+              tables.push({
+                startIndex: tableStartIndex,
+                endIndex: currentIndex - 1,
+                headers,
+                rows
+              });
+            }
+            
+            i = currentIndex;
+            continue;
+          }
+        }
+      }
+      i++;
+    }
+    
+    return tables;
+  };
+
+  // Simple icon replacement for table content
+  const renderTextWithIcons = (text: string) => {
+    if (text.includes('::BONZO::') || text.includes('::SAUCERSWAP::')) {
+      const parts = text.split(/(::BONZO::|::SAUCERSWAP::)/);
+      return parts.map((part, index) => {
+        if (part === '::BONZO::') {
+          return (
+            <img
+              key={index}
+              src="/BonzoIcon.png"
+              alt="Bonzo Finance"
+              className="inline-block w-12 h-12 mx-1 align-text-bottom"
+            />
+          );
+        }
+        if (part === '::SAUCERSWAP::') {
+          return (
+            <img
+              key={index}
+              src="/SauceIcon.png"
+              alt="SaucerSwap"
+              className="inline-block w-10 h-10 mx-1 align-text-bottom"
+            />
+          );
+        }
+        return part;
+      });
+    }
+    return text;
+  };
+
+  const renderTable = (headers: string[], rows: string[][], index: number) => {
+    return (
+      <div key={index} className="my-4 overflow-x-auto">
+        <table className="min-w-full border border-theme-border-primary dark:border-gray-600 rounded-lg overflow-hidden">
+          <thead className="bg-theme-bg-secondary dark:bg-gray-700">
+            <tr>
+              {headers.map((header, i) => {
+                const headerText = header.replace(/\*\*/g, '');
+                return (
+                  <th 
+                    key={i} 
+                    className="px-4 py-3 text-left text-sm font-semibold text-theme-text-primary dark:text-white border-r border-theme-border-primary dark:border-gray-600 last:border-r-0"
+                  >
+                    {renderTextWithIcons(headerText)}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody className="bg-theme-bg-primary dark:bg-gray-800">
+            {rows.map((row, rowIndex) => (
+              <tr 
+                key={rowIndex}
+                className={`${rowIndex % 2 === 0 ? 'bg-theme-bg-primary dark:bg-gray-800' : 'bg-theme-bg-secondary/50 dark:bg-gray-700/50'} hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}
+              >
+                {row.map((cell, cellIndex) => {
+                  const cellText = cell.replace(/\*\*/g, '');
+                  return (
+                    <td 
+                      key={cellIndex}
+                      className="px-4 py-3 text-sm text-theme-text-primary dark:text-gray-300 border-r border-theme-border-primary dark:border-gray-600 last:border-r-0"
+                    >
+                      {renderTextWithIcons(cellText)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderContentWithTables = (content: string) => {
+    const tables = parseTableData(content);
+    
+    if (tables.length === 0) {
+      // Process icons first - convert to markdown image syntax
+      const processedContent = content
+        .replace(/::BONZO::/g, '![Bonzo Finance](BonzoIcon.png)')
+        .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)');
+
       return (
         <ReactMarkdown
           components={{
@@ -89,7 +239,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             li: (props: any) => (
               <li className="flex items-start gap-2">
                 <span className="text-blue-500 dark:text-blue-400 font-bold mt-1">•</span>
-                <span className="flex-1">{props.children}</span>
+                <span className="flex-1">
+                  {props.children}
+                </span>
               </li>
             ),
             strong: (props: any) => (
@@ -107,11 +259,158 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                 {props.children}
               </pre>
             ),
+            // Custom image renderer for icons
+            img: (props: any) => {
+              if (props.src === 'BonzoIcon.png') {
+                return (
+                  <img
+                    src={`/${props.src}`}
+                    alt={props.alt}
+                    className="inline-block w-12 h-12 mx-1 align-text-bottom"
+                  />
+                );
+              }
+              if (props.src === 'SauceIcon.png') {
+                return (
+                  <img
+                    src={`/${props.src}`}
+                    alt={props.alt}
+                    className="inline-block w-10 h-10 mx-1 align-text-bottom"
+                  />
+                );
+              }
+              return <img {...props} />;
+            },
           }}
         >
-          {message.content}
+          {processedContent}
         </ReactMarkdown>
       );
+    }
+
+    // Process icons first for tables content too
+    const processedContent = content
+      .replace(/::BONZO::/g, '![Bonzo Finance](BonzoIcon.png)')
+      .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)');
+
+    // Split content by tables and render each part
+    const lines = processedContent.split('\n');
+    const elements: JSX.Element[] = [];
+    let lastEndIndex = -1;
+
+    tables.forEach((table, tableIndex) => {
+      // Add content before this table
+      if (table.startIndex > lastEndIndex + 1) {
+        const beforeContent = lines.slice(lastEndIndex + 1, table.startIndex).join('\n').trim();
+        if (beforeContent) {
+          elements.push(
+            <div key={`before-${tableIndex}`} className="mb-3">
+              <ReactMarkdown
+                components={{
+                  p: (props: any) => (
+                    <p className="mb-3 last:mb-0 leading-relaxed">
+                      {props.children}
+                    </p>
+                  ),
+                  h3: (props: any) => (
+                    <h3 className="text-base font-bold mb-3 text-theme-text-primary dark:text-white border-b border-theme-border-primary dark:border-gray-600 pb-1">
+                      {props.children}
+                    </h3>
+                  ),
+                  img: (props: any) => {
+                    if (props.src === 'BonzoIcon.png') {
+                      return (
+                        <img
+                          src={`/${props.src}`}
+                          alt={props.alt}
+                          className="inline-block w-12 h-12 mx-1 align-text-bottom"
+                        />
+                      );
+                    }
+                    if (props.src === 'SauceIcon.png') {
+                      return (
+                        <img
+                          src={`/${props.src}`}
+                          alt={props.alt}
+                          className="inline-block w-10 h-10 mx-1 align-text-bottom"
+                        />
+                      );
+                    }
+                    return <img {...props} />;
+                  },
+                }}
+              >
+                {beforeContent}
+              </ReactMarkdown>
+            </div>
+          );
+        }
+      }
+
+      // Add the table (process table content for icons too)
+      const processedHeaders = table.headers.map(h => 
+        h.replace(/!\[Bonzo Finance\]\(BonzoIcon\.png\)/g, '::BONZO::')
+         .replace(/!\[SaucerSwap\]\(SauceIcon\.png\)/g, '::SAUCERSWAP::')
+      );
+      const processedRows = table.rows.map(row => 
+        row.map(cell => 
+          cell.replace(/!\[Bonzo Finance\]\(BonzoIcon\.png\)/g, '::BONZO::')
+              .replace(/!\[SaucerSwap\]\(SauceIcon\.png\)/g, '::SAUCERSWAP::')
+        )
+      );
+      elements.push(renderTable(processedHeaders, processedRows, tableIndex));
+      lastEndIndex = table.endIndex;
+    });
+
+    // Add remaining content after the last table
+    if (lastEndIndex < lines.length - 1) {
+      const afterContent = lines.slice(lastEndIndex + 1).join('\n').trim();
+      if (afterContent) {
+        elements.push(
+          <div key="after-tables" className="mt-3">
+            <ReactMarkdown
+              components={{
+                p: (props: any) => (
+                  <p className="mb-3 last:mb-0 leading-relaxed">
+                    {props.children}
+                  </p>
+                ),
+                img: (props: any) => {
+                  if (props.src === 'BonzoIcon.png') {
+                    return (
+                      <img
+                        src={`/${props.src}`}
+                        alt={props.alt}
+                        className="inline-block w-12 h-12 mx-1 align-text-bottom"
+                      />
+                    );
+                  }
+                  if (props.src === 'SauceIcon.png') {
+                    return (
+                      <img
+                        src={`/${props.src}`}
+                        alt={props.alt}
+                        className="inline-block w-10 h-10 mx-1 align-text-bottom"
+                      />
+                    );
+                  }
+                  return <img {...props} />;
+                },
+              }}
+            >
+              {afterContent}
+            </ReactMarkdown>
+          </div>
+        );
+      }
+    }
+
+    return <div>{elements}</div>;
+  };
+
+  const renderMessageContent = () => {
+    if (isAI) {
+      return renderContentWithTables(message.content);
     }
     
     return (
