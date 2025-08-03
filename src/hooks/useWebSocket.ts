@@ -20,7 +20,7 @@ function getWebSocketUrl(): string {
   const isProduction = import.meta.env.PROD; // boolean: true in production
   
   const localUrl = import.meta.env.VITE_WEBSOCKET_URL_LOCAL || 'ws://localhost:8080';
-  const productionUrl = import.meta.env.VITE_WEBSOCKET_URL_PRODUCTION || 'wss://hedron-production.up.railway.app:8080';
+  const productionUrl = import.meta.env.VITE_WEBSOCKET_URL_PRODUCTION || 'wss://hedron-production.up.railway.app';
   
   const selectedUrl = isProduction ? productionUrl : localUrl;
   console.log(`🌍 Environment: ${import.meta.env.MODE}, WebSocket URL: ${selectedUrl}`);
