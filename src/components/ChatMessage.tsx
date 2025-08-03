@@ -459,24 +459,13 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
   };
 
   const renderMessageContent = () => {
-    // If this is an AI message with swap quote data, show the specialized component
+    // If this is an AI message with swap quote data, show ONLY the specialized component
     if (isAI && message.swapQuote) {
       return (
-        <div>
-          <SwapQuoteCard 
-            quote={message.swapQuote} 
-            onExecuteSwap={handleSwapExecution}
-          />
-          {/* Optionally show the original message as well, but hide swap quote text */}
-          <div className="mt-4 text-sm opacity-75">
-            {renderContentWithTables(
-              message.content
-                .replace(/💱 DETECTED SWAP QUOTE:.*?\n/g, '')
-                .replace(/💱 Sending structured swap quote.*?\n/g, '')
-                .trim()
-            )}
-          </div>
-        </div>
+        <SwapQuoteCard 
+          quote={message.swapQuote} 
+          onExecuteSwap={handleSwapExecution}
+        />
       );
     }
     
