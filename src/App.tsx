@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Menu, X, Wallet, PanelLeftClose, PanelLeftOpen, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, X, Wallet, PanelLeftOpen, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import ChatSidebar from './components/ChatSidebar';
 import ChatArea from './components/ChatArea';
 import ChatInput from './components/ChatInput';
@@ -16,11 +16,7 @@ function App() {
   // Real wallet connection using HashConnect
   const { 
     address, 
-    isConnected: isWalletConnected, 
-    isConnecting,
-    connect: handleWalletConnect,
-    disconnect,
-    formatAddress
+    isConnected: isWalletConnected
   } = useWallet();
 
   const {
@@ -30,7 +26,6 @@ function App() {
     isConnected: isWSConnected,
     isConnecting: isWSConnecting,
     isAuthenticated,
-    isWalletConnected: isChatWalletConnected,
     wsError,
     createNewSession,
     selectSession,
@@ -43,8 +38,7 @@ function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
 
-  // Wallet account formatting for display
-  const walletAccount = address ? formatAddress(address) : null;
+
 
   const handleSendMessage = async () => {
     if (message.trim() && !isLoading && isWSConnected && isAuthenticated && isWalletConnected) {
@@ -209,6 +203,11 @@ function App() {
           <ChatArea
             messages={currentSession?.messages || []}
             isLoading={isLoading}
+            onExecuteSwap={async (swapMessage: string) => {
+              if (isWSConnected && isAuthenticated && isWalletConnected) {
+                await sendMessage(swapMessage);
+              }
+            }}
           />
 
           {/* Message input */}
