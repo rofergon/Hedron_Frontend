@@ -1,4 +1,10 @@
-# 💱 Structured Swap Quotes WebSocket Integration
+# 💱 Structured Data WebSocket Integration
+
+Este documento explica cómo integrar las nuevas respuestas estructuradas del WebSocket Agent en el frontend.
+
+---
+
+## 💱 Swap Quotes Estructurados
 
 Este documento explica cómo integrar las nuevas respuestas estructuradas de swap quotes en el frontend.
 
@@ -256,3 +262,226 @@ El sistema detecta automáticamente estos patrones para generar `SWAP_QUOTE`:
 - "swap quote"
 
 ¡Los datos estructurados harán que tu frontend de trading sea mucho más profesional y fácil de usar! 🚀
+
+---
+
+# 📋 Dashboard Estructurado
+
+El sistema ahora también envía datos estructurados para dashboards de portfolio.
+
+## 🎯 Nuevo Tipo de Mensaje: `DASHBOARD_DATA`
+
+Cuando el usuario solicita su dashboard (por ejemplo: "dashboard", "my portfolio", "balance"), el WebSocket agent envía **dos mensajes**:
+
+1. **`DASHBOARD_DATA`** - Datos estructurados para el componente de dashboard
+2. **`AGENT_RESPONSE`** - Respuesta formateada tradicional (opcional para mostrar)
+
+## 📊 Estructura del Mensaje `DASHBOARD_DATA`
+
+```typescript
+interface DashboardData extends BaseMessage {
+  type: 'DASHBOARD_DATA';
+  dashboard: {
+    hedera: {
+      hbarBalance: {
+        amount: string;        // Cantidad en tinybars
+        formatted: string;     // "57.05 HBAR"
+        usdValue?: string;     // "$13.34"
+      };
+    };
+    bonzo?: {
+      collateral: { amount: string; formatted: string; usdValue?: string; };
+      debt: { amount: string; formatted: string; usdValue?: string; };
+      creditLimit: { amount: string; formatted: string; usdValue?: string; };
+      healthFactor: string;  // "✅ Healthy"
+      marketOverview?: {
+        totalSupplied: { amount: string; formatted: string; usdValue?: string; };
+        totalBorrowed: { amount: string; formatted: string; usdValue?: string; };
+        totalLiquidity: { amount: string; formatted: string; usdValue?: string; };
+      };
+      apyOverview?: {
+        averageSupplyAPY: string;  // "31.08%"
+        averageBorrowAPY: string;  // "0%"
+      };
+    };
+    saucerswap?: {
+      lpFarming: {
+        hasPositions: boolean;
+        positions?: any[];
+      };
+      infinityPool?: {
+        xSauceBalance: { amount: string; formatted: string; };
+        claimableSauce: { amount: string; formatted: string; };
+        marketAPY: string;     // "5.36%"
+        ratio: string;         // "1.21 SAUCE/xSAUCE"
+      };
+    };
+    opportunities?: string[];
+  };
+  originalMessage: string;
+}
+```
+
+## 🎨 Ejemplo de Implementación Frontend
+
+### React/TypeScript Dashboard
+
+```typescript
+const DashboardHandler = () => {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  
+  const handleMessage = useCallback((message: WSMessage) => {
+    switch (message.type) {
+      case 'DASHBOARD_DATA':
+        setDashboardData(message);
+        break;
+      // ... otros casos
+    }
+  }, []);
+
+  return (
+    <div className="defi-interface">
+      {dashboardData && <DeFiDashboard data={dashboardData} />}
+    </div>
+  );
+};
+
+const DeFiDashboard = ({ data }: { data: DashboardData }) => {
+  const { dashboard } = data;
+  
+  return (
+    <div className="defi-dashboard">
+      <h1>📋 Your DeFi Portfolio</h1>
+      
+      {/* Hedera Network */}
+      <div className="protocol-section hedera">
+        <h2>🌍 Hedera Network</h2>
+        <div className="balance-card">
+          <span>HBAR Balance:</span>
+          <div>
+            <span>{dashboard.hedera.hbarBalance.formatted}</span>
+            {dashboard.hedera.hbarBalance.usdValue && (
+              <span>({dashboard.hedera.hbarBalance.usdValue})</span>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Bonzo Finance */}
+      {dashboard.bonzo && (
+        <div className="protocol-section bonzo">
+          <h2>🏦 Bonzo Finance</h2>
+          <div className="stats-grid">
+            <div className="stat">
+              <span>Collateral:</span>
+              <span>{dashboard.bonzo.collateral.formatted}</span>
+            </div>
+            <div className="stat">
+              <span>Debt:</span>
+              <span>{dashboard.bonzo.debt.formatted}</span>
+            </div>
+            <div className="stat">
+              <span>Health Factor:</span>
+              <span>{dashboard.bonzo.healthFactor}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* SaucerSwap */}
+      {dashboard.saucerswap && (
+        <div className="protocol-section saucerswap">
+          <h2>🥩 SaucerSwap</h2>
+          {dashboard.saucerswap.infinityPool && (
+            <div className="infinity-pool">
+              <div>xSAUCE: {dashboard.saucerswap.infinityPool.xSauceBalance.formatted}</div>
+              <div>Claimable: {dashboard.saucerswap.infinityPool.claimableSauce.formatted}</div>
+              <div>APY: {dashboard.saucerswap.infinityPool.marketAPY}</div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Opportunities */}
+      {dashboard.opportunities && (
+        <div className="opportunities">
+          <h2>🎯 Opportunities</h2>
+          <ul>
+            {dashboard.opportunities.map((opp, i) => (
+              <li key={i}>{opp}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## 🎨 CSS Styling
+
+```css
+.defi-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.protocol-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.protocol-section.hedera {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.protocol-section.bonzo {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.protocol-section.saucerswap {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.balance-card, .stat {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+```
+
+## 🔧 Detectar Palabras Clave para Dashboard
+
+El sistema detecta automáticamente estos patrones para generar `DASHBOARD_DATA`:
+
+- "dashboard"
+- "my portfolio" 
+- "my positions"
+- "balance"
+- "overview"
+- "my account"
+- "show my stats"
+
+## 🚀 Beneficios del Dashboard Estructurado
+
+✅ **Vista unificada** de todos los protocolos DeFi  
+✅ **Datos parseados** listos para usar en componentes  
+✅ **Real-time updates** del blockchain  
+✅ **Responsive design** para móvil y desktop  
+✅ **Actionable insights** con oportunidades sugeridas  
+
+¡Ahora tanto los swap quotes como los dashboards tendrán interfaces profesionales! 🎨🚀

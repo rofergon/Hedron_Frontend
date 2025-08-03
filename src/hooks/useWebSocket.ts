@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { WSIncomingMessage, WSOutgoingMessage, WSUserMessage, WSTransactionResult, WSConnectionAuth } from '../types/chat';
+import { WSIncomingMessage, WSUserMessage, WSTransactionResult, WSConnectionAuth } from '../types/chat';
 
 export interface UseWebSocketReturn {
   isConnected: boolean;
@@ -12,7 +12,23 @@ export interface UseWebSocketReturn {
   lastMessage: WSIncomingMessage | null;
 }
 
-export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketReturn {
+// Function to get WebSocket URL based on environment
+function getWebSocketUrl(): string {
+  // Vite automatically sets import.meta.env.MODE:
+  // - 'development' when running npm run dev
+  // - 'production' when running npm run build
+  const isProduction = import.meta.env.PROD; // boolean: true in production
+  
+  const localUrl = import.meta.env.VITE_WEBSOCKET_URL_LOCAL || 'ws://localhost:8080';
+  const productionUrl = import.meta.env.VITE_WEBSOCKET_URL_PRODUCTION || 'wss://hedron-production.up.railway.app:8080';
+  
+  const selectedUrl = isProduction ? productionUrl : localUrl;
+  console.log(`🌍 Environment: ${import.meta.env.MODE}, WebSocket URL: ${selectedUrl}`);
+  
+  return selectedUrl;
+}
+
+export function useWebSocket(url?: string): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -29,9 +45,12 @@ export function useWebSocket(url: string = 'ws://localhost:8080'): UseWebSocketR
 
     setIsConnecting(true);
     setError(null);
+    
+    const wsUrl = url || getWebSocketUrl();
+    console.log(`🔗 Connecting to WebSocket: ${wsUrl}`);
 
     try {
-      ws.current = new WebSocket(url);
+      ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
         console.log('🔗 Connected to Hedera WebSocket Agent');
