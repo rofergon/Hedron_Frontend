@@ -43,7 +43,7 @@ export default function ChatArea({ messages, isLoading, onExecuteSwap, onSendMes
       title: "Account & Network Queries",
       prompts: [
         "Check my HBAR balance and token holdings",
-        "Show me my account information and transaction history"
+        "Check my Infinity Pool staking rewards and xSAUCE balance"
       ]
     }
   ];
