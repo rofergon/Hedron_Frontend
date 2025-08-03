@@ -127,7 +127,10 @@ export default function SwapQuoteCard({ quote, onExecuteSwap }: SwapQuoteCardPro
             </button>
           )}
           
-          <button className="flex-1 bg-theme-bg-primary dark:bg-gray-700 hover:bg-theme-bg-tertiary dark:hover:bg-gray-600 text-theme-text-primary font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-theme-border-primary dark:border-gray-600 text-sm">
+          <button 
+            onClick={() => window.open('https://www.saucerswap.finance/swap', '_blank')}
+            className="flex-1 bg-theme-bg-primary dark:bg-gray-700 hover:bg-theme-bg-tertiary dark:hover:bg-gray-600 text-theme-text-primary font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-theme-border-primary dark:border-gray-600 text-sm"
+          >
             <ExternalLink size={14} />
             SaucerSwap
           </button>
