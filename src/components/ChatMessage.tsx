@@ -1,12 +1,14 @@
 import { Bot, User, Settings, CreditCard, CheckCircle, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Message } from '../types/chat';
+import SwapQuoteCard from './SwapQuoteCard';
 
 interface ChatMessageProps {
   message: Message;
+  onExecuteSwap?: (content: string) => void;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps) {
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
   const isAI = message.sender === 'ai';
@@ -126,8 +128,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
 
   // Simple icon replacement for table content
   const renderTextWithIcons = (text: string) => {
-    if (text.includes('::BONZO::') || text.includes('::SAUCERSWAP::')) {
-      const parts = text.split(/(::BONZO::|::SAUCERSWAP::)/);
+    if (text.includes('::BONZO::') || text.includes('::SAUCERSWAP::') || text.includes('::HEDERA::')) {
+      const parts = text.split(/(::BONZO::|::SAUCERSWAP::|::HEDERA::)/);
       return parts.map((part, index) => {
         if (part === '::BONZO::') {
           return (
@@ -145,6 +147,16 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               key={index}
               src="/SauceIcon.png"
               alt="SaucerSwap"
+              className="inline-block w-10 h-10 mx-1 align-text-bottom"
+            />
+          );
+        }
+        if (part === '::HEDERA::') {
+          return (
+            <img
+              key={index}
+              src="/hedera-hbar-logo.png"
+              alt="Hedera"
               className="inline-block w-10 h-10 mx-1 align-text-bottom"
             />
           );
@@ -206,7 +218,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       // Process icons first - convert to markdown image syntax
       const processedContent = content
         .replace(/::BONZO::/g, '![Bonzo Finance](BonzoIcon.png)')
-        .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)');
+        .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)')
+        .replace(/::HEDERA::/g, '![Hedera](hedera-hbar-logo.png)');
 
       return (
         <ReactMarkdown
@@ -279,6 +292,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   />
                 );
               }
+              if (props.src === 'hedera-hbar-logo.png') {
+                return (
+                  <img
+                    src={`/${props.src}`}
+                    alt={props.alt}
+                    className="inline-block w-10 h-10 mx-1 align-text-bottom"
+                  />
+                );
+              }
               return <img {...props} />;
             },
           }}
@@ -291,7 +313,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     // Process icons first for tables content too
     const processedContent = content
       .replace(/::BONZO::/g, '![Bonzo Finance](BonzoIcon.png)')
-      .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)');
+      .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)')
+      .replace(/::HEDERA::/g, '![Hedera](hedera-hbar-logo.png)');
 
     // Split content by tables and render each part
     const lines = processedContent.split('\n');
@@ -336,6 +359,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                         />
                       );
                     }
+                    if (props.src === 'hedera-hbar-logo.png') {
+                      return (
+                        <img
+                          src={`/${props.src}`}
+                          alt={props.alt}
+                          className="inline-block w-10 h-10 mx-1 align-text-bottom"
+                        />
+                      );
+                    }
                     return <img {...props} />;
                   },
                 }}
@@ -351,11 +383,13 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       const processedHeaders = table.headers.map(h => 
         h.replace(/!\[Bonzo Finance\]\(BonzoIcon\.png\)/g, '::BONZO::')
          .replace(/!\[SaucerSwap\]\(SauceIcon\.png\)/g, '::SAUCERSWAP::')
+         .replace(/!\[Hedera\]\(hedera-hbar-logo\.png\)/g, '::HEDERA::')
       );
       const processedRows = table.rows.map(row => 
         row.map(cell => 
           cell.replace(/!\[Bonzo Finance\]\(BonzoIcon\.png\)/g, '::BONZO::')
               .replace(/!\[SaucerSwap\]\(SauceIcon\.png\)/g, '::SAUCERSWAP::')
+              .replace(/!\[Hedera\]\(hedera-hbar-logo\.png\)/g, '::HEDERA::')
         )
       );
       elements.push(renderTable(processedHeaders, processedRows, tableIndex));
@@ -394,6 +428,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                       />
                     );
                   }
+                  if (props.src === 'hedera-hbar-logo.png') {
+                    return (
+                      <img
+                        src={`/${props.src}`}
+                        alt={props.alt}
+                        className="inline-block w-10 h-10 mx-1 align-text-bottom"
+                      />
+                    );
+                  }
                   return <img {...props} />;
                 },
               }}
@@ -408,7 +451,35 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     return <div>{elements}</div>;
   };
 
+  const handleSwapExecution = (quote: any) => {
+    if (onExecuteSwap) {
+      const swapMessage = `Execute swap: ${quote.input.formatted} ${quote.input.token} to ${quote.output.token}`;
+      onExecuteSwap(swapMessage);
+    }
+  };
+
   const renderMessageContent = () => {
+    // If this is an AI message with swap quote data, show the specialized component
+    if (isAI && message.swapQuote) {
+      return (
+        <div>
+          <SwapQuoteCard 
+            quote={message.swapQuote} 
+            onExecuteSwap={handleSwapExecution}
+          />
+          {/* Optionally show the original message as well, but hide swap quote text */}
+          <div className="mt-4 text-sm opacity-75">
+            {renderContentWithTables(
+              message.content
+                .replace(/💱 DETECTED SWAP QUOTE:.*?\n/g, '')
+                .replace(/💱 Sending structured swap quote.*?\n/g, '')
+                .trim()
+            )}
+          </div>
+        </div>
+      );
+    }
+    
     if (isAI) {
       return renderContentWithTables(message.content);
     }
