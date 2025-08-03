@@ -5,6 +5,7 @@ export interface Message {
   timestamp: Date;
   hasTransaction?: boolean;
   transactionData?: TransactionData;
+  swapQuote?: SwapQuoteData;
 }
 
 export interface TransactionData {
@@ -12,6 +13,28 @@ export interface TransactionData {
   transactionBytes: Uint8Array;
   transactionId?: string;
   status?: 'pending' | 'success' | 'failed';
+}
+
+export interface SwapQuoteData {
+  operation: 'get_amounts_out' | 'get_amounts_in';
+  network: 'mainnet' | 'testnet';
+  input: {
+    token: string;
+    tokenId: string;
+    amount: string;
+    formatted: string;
+  };
+  output: {
+    token: string;
+    tokenId: string;
+    amount: string;
+    formatted: string;
+  };
+  path: string[];
+  fees: number[];
+  exchangeRate: string;
+  gasEstimate?: string;
+  originalMessage: string;
 }
 
 export interface ChatSession {
@@ -42,6 +65,12 @@ export interface WSAgentResponse {
   hasTransaction?: boolean;
 }
 
+export interface WSSwapQuote {
+  type: 'SWAP_QUOTE';
+  quote: SwapQuoteData;
+  originalMessage: string;
+}
+
 export interface WSSystemMessage {
   type: 'SYSTEM_MESSAGE';
   level: string;
@@ -62,5 +91,5 @@ export interface WSTransactionResult {
   timestamp: number;
 }
 
-export type WSIncomingMessage = WSAgentResponse | WSSystemMessage | WSTransactionToSign;
+export type WSIncomingMessage = WSAgentResponse | WSSystemMessage | WSTransactionToSign | WSSwapQuote;
 export type WSOutgoingMessage = WSConnectionAuth | WSUserMessage | WSTransactionResult;
