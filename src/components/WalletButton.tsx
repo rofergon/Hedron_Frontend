@@ -130,9 +130,6 @@ export default function WalletButton({ variant = 'full', className = '' }: Walle
               <div className="text-xs font-semibold">
                 {formatAddress(address!)} • {chain?.name || 'Unknown'}
               </div>
-              <div className="text-xs text-green-100 opacity-90 font-mono">
-                {balance ? `${formatBalance(balance)} ${balance.symbol}` : 'Loading...'}
-              </div>
             </div>
           </>
         ) : (

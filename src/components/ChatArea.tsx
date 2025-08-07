@@ -34,15 +34,15 @@ export default function ChatArea({ messages, isLoading, onExecuteSwap, onSendMes
       emoji: "💰",
       title: "DeFi Operations",
       prompts: [
-        "Deposit 25 HBAR into Bonzo Finance to earn interest",
-        "Show me a quote to trade HBAR for SAUCE and then execute it"
+        "Deposit 25 SAUCE into Bonzo Finance to earn interest",
+        "Show me a quote to trade 10 HBAR for SAUCE and then execute it"
       ]
     },
     {
       emoji: "🔍",
       title: "Account & Network Queries",
       prompts: [
-        "Check my HBAR balance and token holdings",
+        "Create a yield strategy for my HBAR based on my profile",
         "Check my Infinity Pool staking rewards and xSAUCE balance"
       ]
     }
@@ -57,7 +57,7 @@ export default function ChatArea({ messages, isLoading, onExecuteSwap, onSendMes
   if (messages.length === 0) {
     return (
       <div className="flex-1 bg-gradient-to-br from-theme-bg-primary to-theme-bg-secondary dark:from-gray-900 dark:to-gray-800 min-h-0 h-full overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 pt-20 pb-8">
           {/* Header Section */}
           <div className="text-center mb-16">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-theme-lg">

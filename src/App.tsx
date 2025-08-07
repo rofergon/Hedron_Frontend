@@ -5,6 +5,8 @@ import ChatArea from './components/ChatArea';
 import ChatInput from './components/ChatInput';
 import ThemeToggle from './components/ThemeToggle';
 import WalletButton from './components/WalletButton';
+import TokenBalances from './components/TokenBalances';
+import TokenDebugger from './components/TokenDebugger';
 import { useTheme } from './hooks/useTheme';
 import { useChat } from './hooks/useChat';
 import { useWallet } from './hooks/useWallet';
@@ -125,7 +127,12 @@ function App() {
             <h1 className="font-bold text-theme-text-primary text-base truncate">
               {currentSession?.title || 'Hedron Agent'}
             </h1>
-            <ConnectionStatus />
+            <div className="flex flex-col items-center gap-1">
+              <ConnectionStatus />
+              {isWalletConnected && address && (
+                <TokenBalances accountId={address} variant="compact" />
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-1.5">
             <ThemeToggle variant="compact" />
@@ -174,21 +181,30 @@ function App() {
               
               <div className="h-5 w-px bg-theme-border-primary dark:bg-gray-600" />
               
-              <div className="flex-1 min-w-0">
-                <h1 className="text-lg font-bold text-theme-text-primary truncate">
-                  {currentSession?.title || 'Hedron Agent'}
-                </h1>
-                <div className="flex items-center gap-4 mt-0.5">
-                  <p className="text-xs text-theme-text-secondary font-medium">
-                    {currentSession ? `${currentSession.messages.length} messages` : 'Start a new conversation'}
-                  </p>
-                  <ConnectionStatus />
+              <div className="flex-1 min-w-0 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <h1 className="text-xl font-bold text-theme-text-primary truncate">
+                    {currentSession?.title || 'Hedron Agent'}
+                  </h1>
+                  {currentSession && (
+                    <p className="text-xs text-theme-text-secondary font-medium mt-0.5">
+                      {currentSession.messages.length} messages
+                    </p>
+                  )}
                 </div>
+                
+                {isWalletConnected && address && (
+                  <div className="flex-shrink-0 ml-4">
+                    <TokenBalances accountId={address} variant="compact" />
+                  </div>
+                )}
               </div>
             </div>
             
             {/* Right section with controls */}
             <div className="flex items-center gap-3 ml-4">
+              <ConnectionStatus />
+              
               {isSidebarHidden && (
                 <button
                   onClick={handleNewChat}
@@ -229,6 +245,11 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Token Debugger - only show in development */}
+      {import.meta.env.DEV && (
+        <TokenDebugger accountId={address} />
+      )}
     </div>
   );
 }
