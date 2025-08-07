@@ -35,7 +35,7 @@ export default function ChatArea({ messages, isLoading, onExecuteSwap, onSendMes
       title: "DeFi Operations",
       prompts: [
         "Deposit 25 SAUCE into Bonzo Finance to earn interest",
-        "Show me a quote to trade 10 HBAR for SAUCE and then execute it"
+                  "Create a limit order with 10 HBAR when SAUCE token price drops to 0.0045 USDC"
       ]
     },
     {
