@@ -61,19 +61,38 @@ const detectSwapQuote = (content: string): SwapQuoteData | null => {
     const exchangeRate = rateMatch?.[2] || rateMatch?.[1] || '0.044636';
     const fee = feeMatch ? parseFloat(feeMatch[1]) * 100 : 3000; // Convert to hundredths of bip
 
+    // Helper function to convert to appropriate base units
+    const convertToBaseUnit = (amount: string, token: string): string => {
+      const parsedAmount = parseFloat(amount);
+      
+      // For HBAR, if the amount is already reasonable (< 10000), assume it's already in HBAR
+      // Otherwise assume it needs conversion
+      if (token === 'HBAR') {
+        // If the amount seems to be already in HBAR (reasonable size), convert to tinybars
+        if (parsedAmount > 0 && parsedAmount < 1000000) {
+          return (parsedAmount * 100000000).toString();
+        }
+        // If it's a very large number, assume it's already in tinybars
+        return amount;
+      }
+      
+      // For other tokens, use standard conversion
+      return (parsedAmount * 100000000).toString();
+    };
+
     const swapQuote: SwapQuoteData = {
       operation: operation as 'get_amounts_out' | 'get_amounts_in',
       network: 'mainnet',
       input: {
         token: inputToken,
         tokenId: inputToken === 'HBAR' ? '0.0.0' : (inputToken === 'SAUCE' ? '0.0.731861' : '0.0.0'),
-        amount: (parseFloat(inputAmount) * 100000000).toString(), // Convert to tinybars/wei
+        amount: convertToBaseUnit(inputAmount, inputToken),
         formatted: inputAmount
       },
       output: {
         token: outputToken,
         tokenId: tokenId,
-        amount: (parseFloat(outputAmount) * 100000000).toString(),
+        amount: convertToBaseUnit(outputAmount, outputToken),
         formatted: outputAmount
       },
       path: [inputToken, outputToken],

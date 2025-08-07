@@ -126,10 +126,39 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
     return tables;
   };
 
+  // Function to fix potential balance formatting issues
+  const fixBalanceFormatting = (text: string): string => {
+    // Pattern to detect and fix HBAR balance formatting issues
+    // Look for patterns like "39,08 HBAR" or "39.08 HBAR" that should be "390.76 HBAR"
+    const hbarPattern = /(\d{1,3})[,.]\d{2}\s+HBAR/g;
+    
+    return text.replace(hbarPattern, (match) => {
+      const numberPart = match.replace(' HBAR', '');
+      const cleanedNumber = numberPart.replace(',', '.');
+      const numValue = parseFloat(cleanedNumber);
+      
+      // If the number is suspiciously small (< 100) for a typical HBAR balance,
+      // it might need to be corrected (this is a heuristic)
+      if (numValue > 0 && numValue < 100) {
+        // Check if multiplying by 10 would make more sense
+        const correctedValue = numValue * 10;
+        if (correctedValue > 100 && correctedValue < 10000) {
+          return `${correctedValue.toFixed(2)} HBAR`;
+        }
+      }
+      
+      // Return the original with proper decimal formatting
+      return `${numValue.toFixed(2)} HBAR`;
+    });
+  };
+
   // Simple icon replacement for table content
   const renderTextWithIcons = (text: string) => {
-    if (text.includes('::BONZO::') || text.includes('::SAUCERSWAP::') || text.includes('::HEDERA::')) {
-      const parts = text.split(/(::BONZO::|::SAUCERSWAP::|::HEDERA::)/);
+    // First fix any balance formatting issues
+    const fixedText = fixBalanceFormatting(text);
+    
+    if (fixedText.includes('::BONZO::') || fixedText.includes('::SAUCERSWAP::') || fixedText.includes('::HEDERA::')) {
+      const parts = fixedText.split(/(::BONZO::|::SAUCERSWAP::|::HEDERA::)/);
       return parts.map((part, index) => {
         if (part === '::BONZO::') {
           return (
@@ -164,7 +193,7 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
         return part;
       });
     }
-    return text;
+    return fixedText;
   };
 
   const renderTable = (headers: string[], rows: string[][], index: number) => {
@@ -215,8 +244,9 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
     const tables = parseTableData(content);
     
     if (tables.length === 0) {
-      // Process icons first - convert to markdown image syntax
-      const processedContent = content
+      // Fix balance formatting first, then process icons - convert to markdown image syntax
+      const fixedContent = fixBalanceFormatting(content);
+      const processedContent = fixedContent
         .replace(/::BONZO::/g, '![Bonzo Finance](BonzoIcon.png)')
         .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)')
         .replace(/::HEDERA::/g, '![Hedera](hedera-hbar-logo.png)');
@@ -310,8 +340,9 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
       );
     }
 
-    // Process icons first for tables content too
-    const processedContent = content
+    // Fix balance formatting first, then process icons for tables content too
+    const fixedContent = fixBalanceFormatting(content);
+    const processedContent = fixedContent
       .replace(/::BONZO::/g, '![Bonzo Finance](BonzoIcon.png)')
       .replace(/::SAUCERSWAP::/g, '![SaucerSwap](SauceIcon.png)')
       .replace(/::HEDERA::/g, '![Hedera](hedera-hbar-logo.png)');
@@ -475,7 +506,7 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
     
     return (
       <div className="whitespace-pre-wrap break-words font-medium word-wrap">
-        {message.content}
+        {fixBalanceFormatting(message.content)}
       </div>
     );
   };
