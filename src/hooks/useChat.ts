@@ -455,6 +455,39 @@ export function useChat() {
     ));
   }, []);
 
+  // Function to fix balance formatting in outgoing messages
+  const fixOutgoingBalanceFormatting = (text: string): string => {
+    // Enhanced pattern to catch various HBAR formats including whole numbers
+    const hbarPatterns = [
+      /(\d+(?:[,.]\d+)?)\s+(?:hbar|HBAR)/gi,  // Matches "50 hbar", "50.5 HBAR", "50,5 HBAR"
+      /(\d+(?:[,.]\d+)?)\s+(?:hbar|HBAR)/gi   // More flexible pattern
+    ];
+    
+    let result = text;
+    
+    // Apply each pattern
+    hbarPatterns.forEach(pattern => {
+      result = result.replace(pattern, (match, numberStr) => {
+        const cleanedNumber = numberStr.replace(',', '.');
+        const numValue = parseFloat(cleanedNumber);
+        
+        if (isNaN(numValue) || numValue <= 0) {
+          return match; // Return original if invalid
+        }
+        
+        // Log the original value for debugging
+        console.log(`🔍 Found HBAR value in outgoing message: ${numValue}`);
+        
+        // Don't apply automatic corrections to outgoing messages
+        // Let the user's input be sent as-is to avoid confusion
+        // The backend should handle the interpretation correctly
+        return `${numValue} HBAR`;
+      });
+    });
+    
+    return result;
+  };
+
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
 
@@ -473,6 +506,13 @@ export function useChat() {
       return;
     }
 
+    // Apply balance formatting for logging/normalization only
+    const normalizedContent = fixOutgoingBalanceFormatting(content);
+    
+    // For now, send the original content to avoid over-correcting
+    // The issue seems to be in backend interpretation, not frontend formatting
+    const contentToSend = content;
+
     let sessionId = currentSessionId;
     
     // Create a new session if none exists
@@ -489,10 +529,10 @@ export function useChat() {
       setCurrentSessionId(sessionId);
     }
 
-    // Add user message
+    // Add user message (show the original content in UI)
     const userMessage: Message = {
       id: generateId(),
-      content,
+      content: content,
       sender: 'user',
       timestamp: new Date(),
     };
@@ -513,10 +553,10 @@ export function useChat() {
       return session;
     }));
 
-    // Send message via WebSocket
+    // Send message via WebSocket (send original content to backend)
     setIsLoading(true);
     try {
-      sendWSMessage(content, address);
+      sendWSMessage(contentToSend, address);
     } catch (error) {
       console.error('Failed to send message:', error);
       setIsLoading(false);

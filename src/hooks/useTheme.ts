@@ -9,8 +9,8 @@ export function useTheme() {
     if (stored && ['light', 'dark'].includes(stored)) {
       return stored;
     }
-    // Default to system preference on first visit
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Default to light on first visit
+    return 'light';
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
