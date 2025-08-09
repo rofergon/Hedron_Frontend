@@ -1,4 +1,5 @@
-import { Bot, User, Settings, CreditCard, CheckCircle, Clock } from 'lucide-react';
+import { Bot, User, Settings, CreditCard, CheckCircle, Clock, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Message } from '../types/chat';
 import SwapQuoteCard from './SwapQuoteCard';
@@ -9,6 +10,7 @@ interface ChatMessageProps {
 }
 
 export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps) {
+  const [copied, setCopied] = useState(false);
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
   const isAI = message.sender === 'ai';
@@ -41,6 +43,30 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
     }
     // For assistant/bot messages, no background - just the image
     return '';
+  };
+
+  const getCopyText = (): string => {
+    if (message.swapQuote && !message.content) {
+      const q = message.swapQuote;
+      const fees = q.fees.map((f) => `${(f / 10000).toFixed(2)}%`).join(', ');
+      const op = q.operation === 'get_amounts_out' ? 'Exact Input' : 'Exact Output';
+      return `Swap Quote (${q.network}, ${op})\n` +
+        `You pay: ${q.input.formatted} ${q.input.token}\n` +
+        `You receive: ${q.output.formatted} ${q.output.token}\n` +
+        `Rate: 1 ${q.input.token} = ${q.exchangeRate} ${q.output.token}\n` +
+        `Fees: ${fees}` + (q.gasEstimate ? `\nGas: ${q.gasEstimate}` : '');
+    }
+    return message.content;
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(getCopyText());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      // noop
+    }
   };
 
   const getMessageStyle = () => {
@@ -128,28 +154,39 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
 
   // Function to fix potential balance formatting issues
   const fixBalanceFormatting = (text: string): string => {
-    // Pattern to detect and fix HBAR balance formatting issues
-    // Look for patterns like "39,08 HBAR" or "39.08 HBAR" that should be "390.76 HBAR"
-    const hbarPattern = /(\d{1,3})[,.]\d{2}\s+HBAR/g;
+    // More conservative approach: only fix very specific decimal formatting issues
+    // Look for patterns like "39,08 HBAR" (European decimal format) and convert to "39.08 HBAR"
     
-    return text.replace(hbarPattern, (match) => {
-      const numberPart = match.replace(' HBAR', '');
-      const cleanedNumber = numberPart.replace(',', '.');
-      const numValue = parseFloat(cleanedNumber);
-      
-      // If the number is suspiciously small (< 100) for a typical HBAR balance,
-      // it might need to be corrected (this is a heuristic)
-      if (numValue > 0 && numValue < 100) {
-        // Check if multiplying by 10 would make more sense
-        const correctedValue = numValue * 10;
-        if (correctedValue > 100 && correctedValue < 10000) {
-          return `${correctedValue.toFixed(2)} HBAR`;
+    // First, normalize European decimal format (comma) to US format (dot)
+    let result = text.replace(/(\d+),(\d{1,2})\s+HBAR/g, '$1.$2 HBAR');
+    
+    // Only apply balance corrections for very specific cases where we're confident
+    // This is more conservative to avoid over-correcting user input
+    const suspiciousPatterns = [
+      // Only correct if it matches very specific "display balance" contexts
+      /Your current balance:\s*(\d{1,2})\.(\d{1,2})\s+HBAR/g,
+      /Balance:\s*(\d{1,2})\.(\d{1,2})\s+HBAR/g,
+      /Available:\s*(\d{1,2})\.(\d{1,2})\s+HBAR/g
+    ];
+    
+    suspiciousPatterns.forEach(pattern => {
+      result = result.replace(pattern, (match, whole, decimal) => {
+        const numValue = parseFloat(`${whole}.${decimal}`);
+        
+        // Only correct if it's a very small balance that looks like a display error
+        if (numValue > 0 && numValue < 50) {
+          const correctedValue = numValue * 10;
+          if (correctedValue > 100 && correctedValue < 10000) {
+            console.log(`🔧 Correcting HBAR balance display: ${numValue} → ${correctedValue}`);
+            return match.replace(`${whole}.${decimal}`, correctedValue.toFixed(2));
+          }
         }
-      }
-      
-      // Return the original with proper decimal formatting
-      return `${numValue.toFixed(2)} HBAR`;
+        
+        return match;
+      });
     });
+    
+    return result;
   };
 
   // Simple icon replacement for table content
@@ -540,7 +577,19 @@ export default function ChatMessage({ message, onExecuteSwap }: ChatMessageProps
           inline-block px-5 py-4 rounded-2xl text-sm leading-relaxed shadow-sm
           transition-all duration-200 hover:shadow-theme-md w-auto max-w-full
           ${getMessageStyle()}
+          relative
         `}>
+          {/* Copy button */}
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={handleCopy}
+              className="p-1.5 rounded-md bg-black/40 hover:bg-black/60 text-white focus:outline-none"
+              title={copied ? 'Copiado' : 'Copiar mensaje'}
+              aria-label={copied ? 'Copiado' : 'Copiar mensaje'}
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+          </div>
           {renderMessageContent()}
 
           {/* Transaction Status Indicator */}
