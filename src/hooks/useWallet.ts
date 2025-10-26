@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { HashConnect, HashConnectConnectionState, SessionData } from 'hashconnect'
-import { createHashConnect } from '../config/hashconnect'
+import { DAppConnector } from '@hashgraph/hedera-wallet-connect'
+import { createDAppConnector, ConnectionState } from '../config/hashconnect'
 
-// Global singleton to prevent multiple HashConnect instances across hot reloads
-let globalHashConnectInstance: HashConnect | null = null
-let globalInitPromise: Promise<HashConnect> | null = null
+// Global singleton to prevent multiple DAppConnector instances across hot reloads
+let globalDAppConnectorInstance: DAppConnector | null = null
+let globalInitPromise: Promise<DAppConnector> | null = null
 
 export function useWallet() {
-  const [hashconnect, setHashconnect] = useState<HashConnect | null>(null)
-  const [connectionState, setConnectionState] = useState<HashConnectConnectionState>(HashConnectConnectionState.Disconnected)
-  const [sessionData, setSessionData] = useState<SessionData | null>(null)
+  const [dAppConnector, setDAppConnector] = useState<DAppConnector | null>(null)
+  const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.Disconnected)
+  const [sessionData, setSessionData] = useState<any>(null)
   const [isConnecting, setIsConnecting] = useState(false)
   const [address, setAddress] = useState<string | null>(null)
   const [balance, setBalance] = useState<any>(null)
@@ -44,21 +44,21 @@ export function useWallet() {
     }
   }, [])
 
-  // Get or create HashConnect instance (singleton pattern)
-  const getHashConnectInstance = useCallback(async (): Promise<HashConnect> => {
+  // Get or create DAppConnector instance (singleton pattern)
+  const getDAppConnectorInstance = useCallback(async (): Promise<DAppConnector> => {
     // Return existing instance if available
-    if (globalHashConnectInstance) {
-      console.log('♻️ Reusing existing HashConnect instance')
-      return globalHashConnectInstance
+    if (globalDAppConnectorInstance) {
+      console.log('♻️ Reusing existing DAppConnector instance')
+      return globalDAppConnectorInstance
     }
 
     // Return existing init promise if in progress
     if (globalInitPromise) {
-      console.log('⏳ Waiting for existing HashConnect initialization')
+      console.log('⏳ Waiting for existing DAppConnector initialization')
       return globalInitPromise
     }
 
-    console.log('🚀 Creating new HashConnect instance')
+    console.log('🚀 Creating new DAppConnector instance')
     
     // Clear storage before creating new instance
     clearWalletConnectStorage()
@@ -66,13 +66,13 @@ export function useWallet() {
     // Create initialization promise
     globalInitPromise = (async () => {
       try {
-        const hc = createHashConnect()
-        await hc.init()
-        globalHashConnectInstance = hc
-        console.log('✅ HashConnect instance created and initialized')
-        return hc
+        const connector = createDAppConnector()
+        await connector.init({ logger: 'error' })
+        globalDAppConnectorInstance = connector
+        console.log('✅ DAppConnector instance created and initialized')
+        return connector
       } catch (error) {
-        console.error('❌ Failed to initialize HashConnect:', error)
+        console.error('❌ Failed to initialize DAppConnector:', error)
         globalInitPromise = null // Reset so it can be retried
         throw error
       }
@@ -81,88 +81,92 @@ export function useWallet() {
     return globalInitPromise
   }, [clearWalletConnectStorage])
 
-  // Initialize HashConnect only once per component instance
+  // Initialize DAppConnector only once per component instance
   useEffect(() => {
     let isMounted = true
 
-    const initializeHashConnect = async () => {
+    const initializeDAppConnector = async () => {
       try {
-        const hc = await getHashConnectInstance()
+        const connector = await getDAppConnectorInstance()
         
         if (!isMounted) return // Component unmounted during init
         
-        setHashconnect(hc)
+        setDAppConnector(connector)
         setError(null)
 
-        // Set up event listeners with cleanup
-        const onPairing = (newPairing: SessionData) => {
-          if (!isMounted) return
-          console.log('✅ Paired with wallet:', newPairing)
-          setSessionData(newPairing)
-          setError(null)
-          modalOpenedRef.current = false
+        // Initialize periodic session check to detect successful pairing
+        const checkConnectionStatus = () => {
+          if (!isMounted || !connector) return
           
-          // Clear timeout since connection succeeded
-          if (modalTimeoutRef.current) {
-            clearTimeout(modalTimeoutRef.current)
-            modalTimeoutRef.current = null
-          }
+          // Check if we have active sessions
+          const sessions = connector.walletConnectClient?.session?.getAll() || []
           
-          if (newPairing.accountIds && newPairing.accountIds.length > 0) {
-            setAddress(newPairing.accountIds[0])
-          }
-        }
-
-        const onDisconnection = () => {
-          if (!isMounted) return
-          console.log('❌ Disconnected from wallet')
-          setSessionData(null)
-          setAddress(null)
-          setBalance(null)
-          setError(null)
-          modalOpenedRef.current = false
-          
-          if (modalTimeoutRef.current) {
-            clearTimeout(modalTimeoutRef.current)
-            modalTimeoutRef.current = null
-          }
-        }
-
-        const onConnectionStatusChange = (connectionStatus: HashConnectConnectionState) => {
-          if (!isMounted) return
-          console.log('🔄 Connection status changed:', connectionStatus)
-          setConnectionState(connectionStatus)
-          setIsConnecting(connectionStatus === HashConnectConnectionState.Connecting)
-          
-          if (connectionStatus === HashConnectConnectionState.Disconnected) {
+          if (sessions.length > 0) {
+            const activeSession = sessions[0]
+            console.log('✅ Found active session:', {
+              topic: activeSession.topic,
+              namespaces: activeSession.namespaces,
+              accounts: activeSession.namespaces?.hedera?.accounts
+            })
+            
+            setSessionData(activeSession)
+            setConnectionState(ConnectionState.Connected) 
+            setIsConnecting(false)
+            setError(null)
             modalOpenedRef.current = false
+            
+            // Clear timeout since connection succeeded
             if (modalTimeoutRef.current) {
               clearTimeout(modalTimeoutRef.current)
               modalTimeoutRef.current = null
             }
+            
+            // Extract account ID from session
+            try {
+              let accountId = null
+              if (activeSession?.namespaces?.hedera?.accounts?.length > 0) {
+                accountId = activeSession.namespaces.hedera.accounts[0].split(':')[2]
+              }
+              
+              if (accountId) {
+                setAddress(accountId)
+                console.log('📍 Account ID set:', accountId)
+              }
+            } catch (error) {
+              console.warn('⚠️ Error extracting account ID:', error)
+            }
+          } else if (connectionState === ConnectionState.Connected) {
+            // No sessions but we think we're connected - disconnect
+            console.log('❌ No active sessions, disconnecting')
+            setSessionData(null)
+            setAddress(null)
+            setBalance(null)
+            setConnectionState(ConnectionState.Disconnected)
+            setIsConnecting(false)
           }
         }
 
-        // Register event listeners
-        hc.pairingEvent.on(onPairing)
-        hc.disconnectionEvent.on(onDisconnection)
-        hc.connectionStatusChangeEvent.on(onConnectionStatusChange)
+        // Check connection status immediately and then periodically
+        checkConnectionStatus()
+        const statusCheckInterval = setInterval(checkConnectionStatus, 2000)
+
+        console.log('✅ DAppConnector initialized with periodic session checking')
 
         // Store cleanup functions
         cleanupFunctionsRef.current = [
-          () => hc.pairingEvent.off(onPairing),
-          () => hc.disconnectionEvent.off(onDisconnection),
-          () => hc.connectionStatusChangeEvent.off(onConnectionStatusChange)
+          () => {
+            clearInterval(statusCheckInterval)
+          }
         ]
 
       } catch (error) {
         if (!isMounted) return
-        console.error('❌ Failed to initialize HashConnect:', error)
+        console.error('❌ Failed to initialize DAppConnector:', error)
         setError(error instanceof Error ? error.message : 'Failed to initialize wallet connection')
       }
     }
 
-    initializeHashConnect()
+    initializeDAppConnector()
 
     return () => {
       isMounted = false
@@ -184,8 +188,8 @@ export function useWallet() {
       cleanupFunctionsRef.current = []
       
       // Reset local state
-      setHashconnect(null)
-      setConnectionState(HashConnectConnectionState.Disconnected)
+      setDAppConnector(null)
+      setConnectionState(ConnectionState.Disconnected)
       setSessionData(null)
       setAddress(null)
       setBalance(null)
@@ -194,11 +198,11 @@ export function useWallet() {
       
       console.log('✅ useWallet cleanup completed')
     }
-  }, [getHashConnectInstance])
+  }, [getDAppConnectorInstance])
 
   // Get balance when address changes
   useEffect(() => {
-    if (address && connectionState === HashConnectConnectionState.Paired) {
+    if (address && connectionState === ConnectionState.Connected) {
       // For now, we'll show a mock balance
       // In a real implementation, you would query the Hedera mirror node
       setBalance({
@@ -212,7 +216,7 @@ export function useWallet() {
 
   // Connect function with improved error handling
   const connect = useCallback(async () => {
-    if (!hashconnect) {
+    if (!dAppConnector) {
       setError('Wallet not initialized')
       return
     }
@@ -224,36 +228,46 @@ export function useWallet() {
     }
 
     // Prevent opening modal if already connecting or connected
-    if (connectionState === HashConnectConnectionState.Connecting || 
-        connectionState === HashConnectConnectionState.Paired) {
+    if (connectionState === ConnectionState.Connecting || 
+        connectionState === ConnectionState.Connected) {
       console.log('⏳ Already connecting or connected')
       return
     }
 
     try {
       setError(null)
+      setIsConnecting(true)
+      setConnectionState(ConnectionState.Connecting)
       modalOpenedRef.current = true
-      console.log('🔗 Opening pairing modal...')
-      hashconnect.openPairingModal()
+      console.log('🔗 Opening connection modal...')
+      await dAppConnector.openModal()
       
-      // Safety timeout to reset modal flag if user closes modal without completing connection
+      // The periodic session checker will detect when pairing is successful
+      // Set a timeout to reset connecting state if no connection is established
       modalTimeoutRef.current = setTimeout(() => {
-        if (modalOpenedRef.current && !sessionData) {
-          console.log('⏰ Modal timeout - resetting flag (no session established)')
+        // Check current sessions to see if connection was established
+        const sessions = dAppConnector.walletConnectClient?.session?.getAll() || []
+        if (modalOpenedRef.current && sessions.length === 0) {
+          console.log('⏰ Modal timeout - no sessions found, resetting connection state')
           modalOpenedRef.current = false
+          setIsConnecting(false)
+          setConnectionState(ConnectionState.Disconnected)
+          setError('Connection timeout - please try again')
         }
-      }, 30000) // 30 second timeout
+      }, 60000) // 60 second timeout to give more time for pairing
       
     } catch (error) {
-      console.error('❌ Failed to open pairing modal:', error)
+      console.error('❌ Failed to open connection modal:', error)
       setError(error instanceof Error ? error.message : 'Failed to connect to wallet')
       modalOpenedRef.current = false // Reset flag only on error
+      setIsConnecting(false)
+      setConnectionState(ConnectionState.Disconnected)
     }
-  }, [hashconnect, connectionState, sessionData])
+  }, [dAppConnector, connectionState, sessionData])
 
   // Disconnect function with proper cleanup
   const disconnect = useCallback(async () => {
-    if (!hashconnect) return
+    if (!dAppConnector) return
     
     try {
       console.log('🔌 Disconnecting wallet...')
@@ -265,8 +279,10 @@ export function useWallet() {
       }
       modalOpenedRef.current = false
       
-      // Disconnect from HashConnect
-      await hashconnect.disconnect()
+      // Disconnect from DAppConnector
+      if (sessionData) {
+        await dAppConnector.disconnect(sessionData.topic)
+      }
       
       console.log('✅ Wallet disconnected successfully')
       
@@ -274,17 +290,17 @@ export function useWallet() {
       console.error('❌ Failed to disconnect:', error)
       setError(error instanceof Error ? error.message : 'Failed to disconnect wallet')
     }
-  }, [hashconnect])
+  }, [dAppConnector])
 
   // Force reset function for emergency cases
   const forceReset = useCallback(() => {
-    console.log('🚨 Force resetting HashConnect...')
+    console.log('🚨 Force resetting DAppConnector...')
     
     // Clear all storage
     clearWalletConnectStorage()
     
     // Reset global singleton
-    globalHashConnectInstance = null
+    globalDAppConnectorInstance = null
     globalInitPromise = null
     
     // Reset modal state
@@ -296,8 +312,8 @@ export function useWallet() {
     }
     
     // Reset all state
-    setHashconnect(null)
-    setConnectionState(HashConnectConnectionState.Disconnected)
+    setDAppConnector(null)
+    setConnectionState(ConnectionState.Disconnected)
     setSessionData(null)
     setAddress(null)
     setBalance(null)
@@ -327,12 +343,12 @@ export function useWallet() {
 
   // Computed values
   const isConnected = useMemo(() => 
-    connectionState === HashConnectConnectionState.Paired && !!sessionData, 
+    connectionState === ConnectionState.Connected && !!sessionData, 
     [connectionState, sessionData]
   )
   
   const isDisconnected = useMemo(() => 
-    connectionState === HashConnectConnectionState.Disconnected, 
+    connectionState === ConnectionState.Disconnected, 
     [connectionState]
   )
 
@@ -347,6 +363,31 @@ export function useWallet() {
     }
   }, [])
 
+  // Manual check function for debugging
+  const checkStatus = useCallback(() => {
+    if (!dAppConnector) {
+      console.log('🔍 DAppConnector not initialized')
+      return
+    }
+    
+    const sessions = dAppConnector.walletConnectClient?.session?.getAll() || []
+    console.log('🔍 Manual status check:', {
+      connectionState,
+      isConnecting,
+      isConnected,
+      sessions: sessions.length,
+      address,
+      sessionData: !!sessionData
+    })
+    
+    sessions.forEach((session, index) => {
+      console.log(`📋 Session ${index}:`, {
+        topic: session.topic,
+        accounts: session.namespaces?.hedera?.accounts
+      })
+    })
+  }, [dAppConnector, connectionState, isConnecting, isConnected, address, sessionData])
+
   return {
     address,
     isConnected,
@@ -360,9 +401,10 @@ export function useWallet() {
     formatBalance,
     connectionState,
     sessionData,
-    hashconnect,
+    dAppConnector,
     error,
     forceReset, // Emergency reset function
+    checkStatus, // Manual status check for debugging
     // Additional methods for compatibility
     openModal: connect,
     closeModal: disconnect
