@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Wallet, Loader2, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { useWallet } from '../hooks/useWallet'
 import { projectId } from '../config/hashconnect'
@@ -14,11 +14,10 @@ export default function WalletButton({ variant = 'full', className = '' }: Walle
     isConnected, 
     isConnecting, 
     chain, 
-    balance, 
     connect, 
     disconnect, 
-    formatAddress, 
-    formatBalance,
+    formatAddress,
+    checkStatus,
     error 
   } = useWallet()
   
@@ -137,10 +136,19 @@ export default function WalletButton({ variant = 'full', className = '' }: Walle
             <Wallet size={16} />
             <div className="text-left">
               <div className="text-sm font-semibold">Connect Wallet</div>
-              <div className="text-xs text-green-100 opacity-90">Via HashConnect</div>
+              <div className="text-xs text-green-100 opacity-90">Via Hedera Wallet Connect</div>
             </div>
           </>
         )}
+      </button>
+      
+      {/* Debug button - temporary */}
+      <button
+        onClick={checkStatus}
+        className="ml-2 px-2 py-1 bg-blue-600 text-white rounded text-xs"
+        title="Debug status"
+      >
+        Debug
       </button>
       
       {(error || hasInvalidProjectId) && (
