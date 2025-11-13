@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Documentation files for AI agents
+codex-cli-guia.md
+AGENTS.md
