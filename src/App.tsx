@@ -10,6 +10,9 @@ import TokenDebugger from './components/TokenDebugger';
 import { useTheme } from './hooks/useTheme';
 import { useChat } from './hooks/useChat';
 import { useWallet } from './hooks/useWallet';
+import DefiDataHub from './pages/DefiDataHub';
+
+type ViewMode = 'agent' | 'defi';
 
 function App() {
   // Initialize theme
@@ -39,6 +42,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
+  const [activeView, setActiveView] = useState<ViewMode>('agent');
 
 
 
@@ -112,6 +116,35 @@ function App() {
     );
   };
 
+  const ViewSwitcher = ({ className = "" }: { className?: string }) => (
+    <div className={`inline-flex rounded-full border border-theme-border-primary dark:border-gray-700 bg-theme-bg-secondary/60 dark:bg-gray-800/60 text-xs font-medium ${className}`}>
+      <button
+        onClick={() => setActiveView('agent')}
+        className={`px-3 py-1.5 rounded-full transition-all ${activeView === 'agent' ? 'bg-theme-bg-primary dark:bg-gray-900 text-theme-text-primary shadow-sm' : 'text-theme-text-secondary hover:text-theme-text-primary'}`}
+      >
+        Agente
+      </button>
+      <button
+        onClick={() => setActiveView('defi')}
+        className={`px-3 py-1.5 rounded-full transition-all ${activeView === 'defi' ? 'bg-theme-bg-primary dark:bg-gray-900 text-theme-text-primary shadow-sm' : 'text-theme-text-secondary hover:text-theme-text-primary'}`}
+      >
+        DeFi directo
+      </button>
+    </div>
+  );
+
+  if (activeView === 'defi') {
+    return (
+      <DefiDataHub
+        address={address || null}
+        isWalletConnected={isWalletConnected}
+        connectionStatus={<ConnectionStatus />}
+        onBackToAgent={() => setActiveView('agent')}
+        viewSwitcher={({ className = '' } = {}) => <ViewSwitcher className={className} />}
+      />
+    );
+  }
+
   return (
     <div className="h-screen bg-theme-bg-primary dark:bg-gray-900 flex transition-colors duration-300 chat-container">
       {/* Mobile header */}
@@ -132,6 +165,7 @@ function App() {
               {isWalletConnected && address && (
                 <TokenBalances accountId={address} variant="compact" />
               )}
+              <ViewSwitcher className="mt-1" />
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -203,6 +237,7 @@ function App() {
             
             {/* Right section with controls */}
             <div className="flex items-center gap-3 ml-4">
+              <ViewSwitcher />
               <ConnectionStatus />
               
               {isSidebarHidden && (
